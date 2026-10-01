@@ -12,7 +12,9 @@ from django.http import HttpResponseForbidden
 
 from .models import Rock, RockCheckin, RockDependency, RockMilestone
 from .forms import RockForm, RockStatusForm, RockDependencyForm
-from apps.accounts.scoping import OrgScopedMixin, get_active_team, get_org_object_or_404
+from apps.accounts.scoping import (
+    OrgScopedMixin, get_active_team, get_org_object_or_404, is_org_admin,
+)
 from apps.issues.models import Issue, IssueActivity
 
 
@@ -41,6 +43,11 @@ def quarter_options(selected_q, selected_y):
         })
         q, y = Rock.next_quarter(q, y)
     return options
+
+
+def _can_edit(user, rock):
+    """Only the owner or an organisation admin may change a Rock's status or check in."""
+    return user == rock.owner or is_org_admin(user, rock.team.organization)
 
 
 # ---------------------------------------------------------------------------
@@ -153,11 +160,7 @@ class RockDetailView(LoginRequiredMixin, OrgScopedMixin, DetailView):
         ctx['child_rocks'] = rock.child_rocks.select_related('owner', 'team')
         ctx['dependency_form'] = RockDependencyForm(rock=rock)
         ctx['status_form'] = RockStatusForm(initial={'status': rock.status})
-        ctx['can_edit'] = (
-            self.request.user == rock.owner
-            or self.request.user.is_superuser
-            or getattr(getattr(self.request.user, 'profile', None), 'is_admin', lambda: False)()
-        )
+        ctx['can_edit'] = _can_edit(self.request.user, rock)
         ctx['today'] = date.today()
         ctx['linked_issues'] = rock.linked_issues.select_related(
             'originating_team', 'created_by'
@@ -194,12 +197,7 @@ class RockStatusView(LoginRequiredMixin, View):
         form = RockStatusForm(request.POST)
         if form.is_valid():
             new_status = form.cleaned_data['status']
-            # Only owner, team admin, or superuser can change status
-            is_owner = request.user == rock.owner
-            is_admin = request.user.is_superuser or getattr(
-                getattr(request.user, 'profile', None), 'is_admin', lambda: False
-            )()
-            if not (is_owner or is_admin):
+            if not _can_edit(request.user, rock):
                 return HttpResponseForbidden()
             was_off_track = rock.status == Rock.STATUS_OFF_TRACK
             rock.status = new_status
@@ -220,11 +218,7 @@ class RockCheckinCreateView(LoginRequiredMixin, View):
 
     def post(self, request, pk):
         rock = get_org_object_or_404(request, Rock, pk=pk)
-        is_owner = request.user == rock.owner
-        is_admin = request.user.is_superuser or getattr(
-            getattr(request.user, 'profile', None), 'is_admin', lambda: False
-        )()
-        if not (is_owner or is_admin):
+        if not _can_edit(request.user, rock):
             return HttpResponseForbidden()
 
         confidence = request.POST.get('confidence')

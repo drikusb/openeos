@@ -6,11 +6,11 @@ from django.db.models import Q
 
 from .models import Meeting, MeetingNote, SegueEntry, Headline, MeetingRating, SEGMENT_NAMES, SEGMENT_DURATIONS, SEGMENT_TEMPLATES
 from .forms import MeetingCreateForm, SegueEntryForm, HeadlineForm, MeetingRatingForm, CascadingMessagesForm
-from apps.accounts.scoping import get_active_team, get_user_org
+from apps.accounts.scoping import get_active_org, get_active_team
 
 
-def _get_org(user):
-    return get_user_org(user)
+def _get_org(request):
+    return get_active_org(request)
 
 
 def _team_member_user_ids(team):
@@ -158,14 +158,14 @@ class MeetingCreateView(LoginRequiredMixin, View):
     template_name = 'meetings/meeting_form.html'
 
     def get(self, request):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         form = MeetingCreateForm(org=org)
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         form = MeetingCreateForm(request.POST, org=org)
@@ -186,7 +186,7 @@ class MeetingDetailView(LoginRequiredMixin, View):
     template_name = 'meetings/meeting_detail.html'
 
     def _get_meeting(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return None, None
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -202,7 +202,7 @@ class MeetingDetailView(LoginRequiredMixin, View):
 
 class MeetingStartView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -216,7 +216,7 @@ class MeetingAdvanceView(LoginRequiredMixin, View):
     """Advance to the next segment."""
 
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -229,7 +229,7 @@ class MeetingCompleteView(LoginRequiredMixin, View):
     """Save cascading messages and mark complete."""
 
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -246,7 +246,7 @@ class MeetingCompleteView(LoginRequiredMixin, View):
 
 class SegueAddView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -264,7 +264,7 @@ class SegueAddView(LoginRequiredMixin, View):
 
 class HeadlineAddView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -280,7 +280,7 @@ class HeadlineAddView(LoginRequiredMixin, View):
 
 class HeadlineEscalateView(LoginRequiredMixin, View):
     def post(self, request, pk, hpk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -312,7 +312,7 @@ class HeadlineEscalateView(LoginRequiredMixin, View):
 
 class MeetingRateView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
@@ -335,7 +335,7 @@ class MeetingNoteSaveView(LoginRequiredMixin, View):
     """POST: create or update the notes block for the current segment."""
 
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)

@@ -25,21 +25,23 @@
             {% endif %}
             <h4 class="mb-0">{{ profile.display_name }}</h4>
             <p class="text-muted mb-1">{{ request.user.email|default:"No email set" }}</p>
-            <span class="badge bg-light text-dark border">{{ profile.get_role_display }}</span>
         </div>
     </div>
 
     <div class="col-md-8">
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0"><i class="bi bi-building me-2"></i>Organisation</h5>
+                <h5 class="mb-0"><i class="bi bi-building me-2"></i>Organisation{{ memberships|length|pluralize }}</h5>
             </div>
             <div class="card-body">
-                {% if profile.organization %}
-                <p class="mb-0 fw-semibold">{{ profile.organization.name }}</p>
-                {% else %}
+                {% for membership in memberships %}
+                <p class="mb-1">
+                    <span class="fw-semibold">{{ membership.organization.name }}</span>
+                    <span class="badge bg-light text-dark border ms-2">{{ membership.get_role_display }}</span>
+                </p>
+                {% empty %}
                 <p class="text-muted mb-0">Not assigned to an organisation.</p>
-                {% endif %}
+                {% endfor %}
             </div>
         </div>
 

@@ -4,7 +4,7 @@ from django.core import mail
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from apps.accounts.models import Organization, Team, UserProfile
+from apps.accounts.models import Membership, Organization, Team
 from apps.rocks.models import Rock
 
 
@@ -18,7 +18,8 @@ class RockStatusOffTrackAlertTest(TestCase):
         self.other = User.objects.create_user(
             username='alertother', email='other@example.com', password='pw'
         )
-        UserProfile.objects.filter(user__in=[self.owner, self.other]).update(organization=org)
+        for user in (self.owner, self.other):
+            Membership.objects.create(user=user, organization=org)
         self.rock = Rock.objects.create(
             title='Ship it', owner=self.owner, team=self.team,
             quarter=1, year=2026, due_date=date(2026, 3, 31),

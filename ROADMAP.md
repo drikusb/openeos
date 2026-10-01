@@ -65,6 +65,16 @@ A living checklist of what's been built and what's coming next. PRs welcome for 
 
 ---
 
+## ✅ Multiple organisations
+
+- [x] Scope every record fetched by id to the active organisation, with isolation tests
+- [x] Membership model: a user can belong to several organisations with a role in each
+- [x] Organisation switcher in the navbar; superusers can create further organisations
+- [ ] Invite an existing user into another organisation from the Users page
+- [ ] Serve uploaded logos and avatars through an authenticated view
+
+---
+
 ## 🗺️ v0.7 — Export & Reporting
 
 - [ ] Meeting notes PDF: export a completed meeting's notes and summary

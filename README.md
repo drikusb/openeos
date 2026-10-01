@@ -40,6 +40,15 @@ On first boot the entrypoint script:
 
 Log in at `/admin/` to set up your organisation, or visit the dashboard at `/` to get started.
 
+### Multiple organisations
+
+One deployment can host several organisations, each with its own teams, Rocks, Issues, To-Dos, Scorecards, VTO and Accountability Chart. This suits a consultancy running their own company alongside each client.
+
+- A user belongs to an organisation through a **membership**, which carries their role (admin, team leader or member) in that organisation. The same user can be an admin of one organisation and a member of another.
+- Superusers create additional organisations from the navbar switcher (**New organisation**) or at `/org/setup/`. The creator becomes its first admin.
+- Members of more than one organisation see an **organisation switcher** in the navbar above the team switcher. Everything on screen, including lists, search and links by id, is scoped to the active organisation, so switch first if a link to another organisation returns "not found".
+- Memberships can also be managed under **Memberships** in the Django admin.
+
 ---
 
 ## Configuration
@@ -147,7 +156,7 @@ docker compose exec web coverage report
 ```
 .
 ├── apps/
-│   ├── accounts/       # Organisations, Teams, UserProfiles
+│   ├── accounts/       # Organisations, Memberships, Teams, UserProfiles
 │   ├── accountability/ # The Accountability Chart® nodes and roles
 │   ├── issues/         # Issues with IDS® workflow
 │   ├── meetings/       # Level 10 Meeting® runner

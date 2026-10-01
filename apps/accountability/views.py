@@ -6,11 +6,11 @@ from django.contrib import messages
 
 from .models import AccountabilityNode, AccountabilityRole
 from .forms import NodeForm, RoleForm
-from apps.accounts.scoping import get_user_org
+from apps.accounts.scoping import get_active_org
 
 
-def _get_org(user):
-    return get_user_org(user)
+def _get_org(request):
+    return get_active_org(request)
 
 
 def _build_tree(org):
@@ -42,7 +42,7 @@ class ChartView(LoginRequiredMixin, View):
     template_name = 'accountability/chart.html'
 
     def get(self, request):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             messages.warning(request, 'Set up your organisation first.')
             return redirect('accounts:org_setup')
@@ -63,7 +63,7 @@ class NodeCreateView(LoginRequiredMixin, View):
     template_name = 'accountability/node_form.html'
 
     def _setup(self, request):
-        org = _get_org(request.user)
+        org = _get_org(request)
         return org
 
     def _get_parent(self, request, org, source):
@@ -104,7 +104,7 @@ class NodeUpdateView(LoginRequiredMixin, View):
     template_name = 'accountability/node_form.html'
 
     def _get_node(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return None, None
         return get_object_or_404(AccountabilityNode, pk=pk, organization=org), org
@@ -138,7 +138,7 @@ class NodeDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('accountability:chart')
 
     def get_queryset(self):
-        org = _get_org(self.request.user)
+        org = _get_org(self.request)
         return AccountabilityNode.objects.filter(organization=org)
 
     def form_valid(self, form):
@@ -150,7 +150,7 @@ class NodeMoveView(LoginRequiredMixin, View):
     """Reorder a node among its siblings."""
 
     def post(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         node = get_object_or_404(AccountabilityNode, pk=pk, organization=org)
@@ -181,7 +181,7 @@ class RoleCreateView(LoginRequiredMixin, View):
     template_name = 'accountability/role_form.html'
 
     def _get_node(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return None
         return get_object_or_404(AccountabilityNode, pk=pk, organization=org)
@@ -217,7 +217,7 @@ class RoleUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('accountability:chart')
 
     def get_queryset(self):
-        org = _get_org(self.request.user)
+        org = _get_org(self.request)
         return AccountabilityRole.objects.filter(node__organization=org)
 
     def get_context_data(self, **kwargs):
@@ -237,7 +237,7 @@ class RoleDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('accountability:chart')
 
     def get_queryset(self):
-        org = _get_org(self.request.user)
+        org = _get_org(self.request)
         return AccountabilityRole.objects.filter(node__organization=org)
 
     def form_valid(self, form):

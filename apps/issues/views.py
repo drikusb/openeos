@@ -8,7 +8,7 @@ from django.http import HttpResponseForbidden
 from .models import Issue, IssueActivity
 from .forms import IssueForm, IssueStatusForm, IssueDelegateForm, IssueCommentForm
 from apps.accounts.scoping import (
-    OrgScopedMixin, get_active_team, get_org_object_or_404, get_user_org,
+    OrgScopedMixin, get_active_team, get_org_object_or_404, is_org_admin,
 )
 
 ISSUE_ORG_LOOKUP = 'originating_team__organization'
@@ -23,12 +23,10 @@ def _get_issue(request, pk):
 
 
 def _can_edit(user, issue):
-    if user.is_superuser:
-        return True
-    try:
-        return issue.originating_team in user.profile.teams.all() or user.profile.is_admin()
-    except AttributeError:
-        return False
+    return (
+        user.profile.teams.filter(pk=issue.originating_team_id).exists()
+        or is_org_admin(user, issue.originating_team.organization)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -148,13 +146,12 @@ class IssueDetailView(LoginRequiredMixin, OrgScopedMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         issue = self.object
-        org = get_user_org(self.request.user)
         ctx['activity'] = issue.activity.select_related('actor', 'actor__profile').order_by('created_at')
         ctx['linked_rocks'] = issue.linked_rocks.select_related('team', 'owner')
         ctx['status_form'] = IssueStatusForm(initial={'status': issue.status, 'resolution_notes': issue.resolution_notes})
         ctx['delegate_form'] = IssueDelegateForm(
             initial={'delegated_to_team': issue.delegated_to_team},
-            organization=issue.originating_team.organization if issue.originating_team else org,
+            organization=issue.originating_team.organization,
         )
         ctx['comment_form'] = IssueCommentForm()
         ctx['can_edit'] = _can_edit(self.request.user, issue)
@@ -215,7 +212,9 @@ class IssueDelegateView(LoginRequiredMixin, View):
         issue = _get_issue(request, pk)
         if not _can_edit(request.user, issue):
             return HttpResponseForbidden()
-        form = IssueDelegateForm(request.POST, organization=issue.originating_team.organization if issue.originating_team else get_user_org(request.user))
+        form = IssueDelegateForm(
+            request.POST, organization=issue.originating_team.organization
+        )
         if form.is_valid():
             new_team = form.cleaned_data.get('delegated_to_team')
             if new_team:

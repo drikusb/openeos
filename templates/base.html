@@ -95,14 +95,45 @@
                 </form>
 
                 <ul class="navbar-nav ms-auto">
-                    {% if user_teams %}
+                    {% if active_org %}
                     <li class="nav-item dropdown me-2">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-people-fill"></i>
-                            <span class="d-none d-md-inline">{{ active_team.name }}</span>
+                            <span class="d-none d-md-inline">
+                                {% if user_orgs|length > 1 %}{{ active_org.name }} &rsaquo; {% endif %}{{ active_team.name|default:"No team" }}
+                            </span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            {% if user_orgs|length > 1 or user.is_superuser %}
+                            <li><h6 class="dropdown-header">Switch Organisation</h6></li>
+                            {% for org in user_orgs %}
+                            <li>
+                                <form method="post" action="{% url 'accounts:org_switch' org.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 {% if org.pk == active_org.pk %}fw-semibold{% endif %}">
+                                        {% if org.pk == active_org.pk %}
+                                        <i class="bi bi-check2 text-success"></i>
+                                        {% else %}
+                                        <i class="bi bi-dash opacity-0"></i>
+                                        {% endif %}
+                                        {{ org.name }}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                            {% if user.is_superuser %}
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'accounts:org_setup' %}">
+                                    <i class="bi bi-plus-lg"></i> New organisation
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><h6 class="dropdown-header">Switch Team</h6></li>
+                            {% if not user_teams %}
+                            <li><span class="dropdown-item-text text-muted small">You are not in any team here yet.</span></li>
+                            {% endif %}
                             {% for team in user_teams %}
                             <li>
                                 <form method="post" action="{% url 'accounts:team_switch' team.pk %}">

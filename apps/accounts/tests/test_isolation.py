@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from apps.accountability.models import AccountabilityNode, AccountabilityRole
-from apps.accounts.models import Organization, Team, UserProfile
+from apps.accounts.models import Membership, Organization, Team
+from apps.accounts.scoping import SESSION_TEAM_KEY
 from apps.issues.models import Issue
 from apps.meetings.models import Meeting
 from apps.rocks.models import Rock, RockDependency, RockMilestone
@@ -18,7 +19,7 @@ def build_org(label):
     org = Organization.objects.create(name=f'{label} Org')
     team = Team.objects.create(organization=org, name=f'{label} Team')
     user = User.objects.create_user(username=f'{label.lower()}admin', password='pw')
-    UserProfile.objects.filter(user=user).update(organization=org, role=UserProfile.ROLE_ADMIN)
+    Membership.objects.create(user=user, organization=org, role=Membership.ROLE_ADMIN)
     user.profile.teams.add(team)
 
     rock = Rock.objects.create(
@@ -164,7 +165,7 @@ class TeamSwitchRedirectTest(TestCase):
         url = f'/teams/{self.mine["team"].pk}/switch/'
         resp = self.client.post(url, {'next': '/rocks/'})
         self.assertRedirects(resp, '/rocks/', fetch_redirect_response=False)
-        self.assertEqual(self.client.session['active_team_id'], self.mine['team'].pk)
+        self.assertEqual(self.client.session[SESSION_TEAM_KEY], self.mine['team'].pk)
 
     def test_ignores_next_on_another_host(self):
         url = f'/teams/{self.mine["team"].pk}/switch/'

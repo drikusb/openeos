@@ -10,7 +10,7 @@ from django.contrib import messages
 from .models import Scorecard, ScorecardMetric, ScorecardEntry, _current_week_start, _current_month_start
 from .forms import ScorecardForm, ScorecardMetricForm
 from apps.accounts.scoping import (
-    OrgScopedMixin, get_active_team, get_org_object_or_404, get_user_org,
+    OrgScopedMixin, get_active_org, get_active_team, get_org_object_or_404,
 )
 
 
@@ -89,7 +89,7 @@ class ScorecardCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kw = super().get_form_kwargs()
-        kw['organization'] = get_user_org(self.request.user)
+        kw['organization'] = get_active_org(self.request)
         return kw
 
     def form_valid(self, form):
@@ -109,7 +109,7 @@ class ScorecardUpdateView(LoginRequiredMixin, OrgScopedMixin, UpdateView):
 
     def get_form_kwargs(self):
         kw = super().get_form_kwargs()
-        kw['organization'] = get_user_org(self.request.user)
+        kw['organization'] = self.object.team.organization
         return kw
 
     def form_valid(self, form):
@@ -169,7 +169,7 @@ class ScorecardDetailView(LoginRequiredMixin, OrgScopedMixin, DetailView):
         ctx['periods'] = periods
         ctx['table'] = table
         ctx['current_week'] = current_week
-        ctx['metric_form'] = ScorecardMetricForm(organization=get_user_org(self.request.user))
+        ctx['metric_form'] = ScorecardMetricForm(organization=sc.team.organization)
         return ctx
 
 
@@ -187,7 +187,7 @@ class MetricCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kw = super().get_form_kwargs()
-        kw['organization'] = get_user_org(self.request.user)
+        kw['organization'] = self.get_scorecard().team.organization
         return kw
 
     def form_valid(self, form):
@@ -213,7 +213,7 @@ class MetricUpdateView(LoginRequiredMixin, OrgScopedMixin, UpdateView):
 
     def get_form_kwargs(self):
         kw = super().get_form_kwargs()
-        kw['organization'] = get_user_org(self.request.user)
+        kw['organization'] = self.object.scorecard.team.organization
         return kw
 
     def form_valid(self, form):

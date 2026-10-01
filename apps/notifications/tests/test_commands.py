@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from apps.accounts.models import Organization, Team, UserProfile
+from apps.accounts.models import Membership, Organization, Team
 from apps.meetings.models import Meeting
 from apps.todos.models import ToDo
 
@@ -17,7 +17,7 @@ class SendDailyNotificationsTest(TestCase):
         self.user = User.objects.create_user(
             username='cronuser', email='cron@example.com', password='pw'
         )
-        UserProfile.objects.filter(user=self.user).update(organization=self.org)
+        Membership.objects.create(user=self.user, organization=self.org)
         self.user.profile.teams.add(self.team)
 
     def test_sends_digest_for_overdue_todo(self):

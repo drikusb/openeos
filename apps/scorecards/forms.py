@@ -35,7 +35,7 @@ class ScorecardMetricForm(forms.ModelForm):
         if organization:
             owners = (
                 User.objects
-                .filter(profile__organization=organization)
+                .filter(memberships__organization=organization)
                 .order_by('first_name', 'last_name', 'username')
             )
         self.fields['owner'].queryset = owners

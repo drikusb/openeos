@@ -4,29 +4,29 @@ from django.views.generic import (
 )
 from django.db import models
 from django.shortcuts import redirect, get_object_or_404, render
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils.crypto import get_random_string
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.contrib.auth.models import User
 
-from .models import Organization, Team, UserProfile
+from .models import Membership, Organization, Team, UserProfile
 from .forms import OrganizationForm, TeamForm, UserProfileForm, InviteUserForm, TeamMemberForm
-from .scoping import OrgScopedMixin, get_active_team, get_org_object_or_404, get_user_org
+from .scoping import (
+    SESSION_TEAM_KEY, OrgScopedMixin, get_active_org, get_active_team, get_org_object_or_404,
+    get_user_orgs, is_org_admin, set_active_org,
+)
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
+    """Allow only admins of the active organisation (and superusers)."""
+
     def test_func(self):
         user = self.request.user
         if not user.is_authenticated:
             return False
-        if user.is_superuser:
-            return True
-        try:
-            return user.profile.is_admin()
-        except UserProfile.DoesNotExist:
-            return False
+        return is_org_admin(user, get_active_org(self.request))
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         from apps.scorecards.models import ScorecardEntry, _current_week_start
 
         ctx = super().get_context_data(**kwargs)
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         ctx['org'] = org
         team = get_active_team(self.request)
 
@@ -99,24 +99,44 @@ class HomeView(LoginRequiredMixin, TemplateView):
 # ---------------------------------------------------------------------------
 
 class OrgSetupView(LoginRequiredMixin, CreateView):
+    """Create an organisation. Anyone may create the first; only superusers may add more."""
+
     model = Organization
     form_class = OrganizationForm
     template_name = 'accounts/org_setup.html'
     success_url = reverse_lazy('home')
 
     def dispatch(self, request, *args, **kwargs):
-        if Organization.objects.exists():
+        if request.user.is_authenticated and not self._may_create(request.user):
             return redirect('home')
         return super().dispatch(request, *args, **kwargs)
 
+    @staticmethod
+    def _may_create(user):
+        return user.is_superuser or not Organization.objects.exists()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['is_first_org'] = not Organization.objects.exists()
+        return ctx
+
     def form_valid(self, form):
         org = form.save()
-        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
-        profile.organization = org
-        profile.role = UserProfile.ROLE_ADMIN
-        profile.save()
+        Membership.objects.create(
+            user=self.request.user, organization=org, role=Membership.ROLE_ADMIN
+        )
+        set_active_org(self.request, org)
         messages.success(self.request, f'Organisation "{org.name}" is set up. Now create your first team.')
         return redirect(reverse('accounts:team_create'))
+
+
+class OrgSwitchView(LoginRequiredMixin, View):
+    """POST-only: make one of the user's organisations the active one."""
+
+    def post(self, request, pk):
+        org = get_object_or_404(get_user_orgs(request.user), pk=pk)
+        set_active_org(request, org)
+        return redirect('home')
 
 
 class OrgDetailView(LoginRequiredMixin, TemplateView):
@@ -124,14 +144,14 @@ class OrgDetailView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         ctx['org'] = org
         if org:
             ctx['teams'] = Team.objects.filter(organization=org).prefetch_related('members')
-            ctx['members'] = (
-                UserProfile.objects
+            ctx['memberships'] = (
+                Membership.objects
                 .filter(organization=org)
-                .select_related('user')
+                .select_related('user', 'user__profile')
                 .order_by('user__first_name', 'user__username')
             )
         return ctx
@@ -147,7 +167,7 @@ class TeamListView(LoginRequiredMixin, ListView):
     context_object_name = 'teams'
 
     def get_queryset(self):
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         if not org:
             return Team.objects.none()
         return Team.objects.filter(organization=org).prefetch_related('members')
@@ -160,7 +180,7 @@ class TeamCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     success_url = reverse_lazy('accounts:team_list')
 
     def form_valid(self, form):
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         if not org:
             messages.error(self.request, 'You must belong to an organisation first.')
             return redirect('home')
@@ -198,16 +218,20 @@ class TeamDetailView(LoginRequiredMixin, OrgScopedMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        org = self.object.organization
         members = self.object.members.select_related('user').order_by('user__first_name', 'user__username')
+        roles = dict(
+            Membership.objects.filter(organization=org).values_list('user_id', 'role')
+        )
+        role_labels = dict(Membership.ROLE_CHOICES)
+        for profile in members:
+            profile.role_display = role_labels.get(roles.get(profile.user_id), '')
         ctx['members'] = members
         ctx['member_form'] = TeamMemberForm(
-            organization=self.object.organization,
+            organization=org,
             initial={'users': [p.user for p in members]},
         )
-        ctx['is_admin'] = (
-            self.request.user.is_superuser or
-            getattr(getattr(self.request.user, 'profile', None), 'is_admin', lambda: False)()
-        )
+        ctx['is_admin'] = is_org_admin(self.request.user, org)
         return ctx
 
 
@@ -227,7 +251,9 @@ class TeamMembersUpdateView(LoginRequiredMixin, AdminRequiredMixin, FormView):
     def form_valid(self, form):
         team = self.get_team()
         selected_users = set(form.cleaned_data['users'])
-        org_profiles = UserProfile.objects.filter(organization=team.organization)
+        org_profiles = UserProfile.objects.filter(
+            user__memberships__organization=team.organization
+        )
         for profile in org_profiles:
             if profile.user in selected_users:
                 profile.teams.add(team)
@@ -251,7 +277,8 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         ctx['profile'] = profile
-        ctx['teams'] = profile.teams.all()
+        ctx['memberships'] = self.request.user.memberships.select_related('organization')
+        ctx['teams'] = profile.teams.select_related('organization')
         return ctx
 
 
@@ -275,25 +302,26 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 # ---------------------------------------------------------------------------
 
 class UserListView(LoginRequiredMixin, AdminRequiredMixin, ListView):
-    model = UserProfile
+    model = Membership
     template_name = 'accounts/user_list.html'
-    context_object_name = 'profiles'
+    context_object_name = 'memberships'
 
     def get_queryset(self):
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         if not org:
-            return UserProfile.objects.none()
+            return Membership.objects.none()
+        org_teams = Team.objects.filter(organization=org)
         return (
-            UserProfile.objects
+            Membership.objects
             .filter(organization=org)
-            .select_related('user')
-            .prefetch_related('teams')
+            .select_related('user', 'user__profile')
+            .prefetch_related(Prefetch('user__profile__teams', queryset=org_teams))
             .order_by('user__first_name', 'user__username')
         )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['org'] = get_user_org(self.request.user)
+        ctx['org'] = get_active_org(self.request)
         return ctx
 
 
@@ -304,11 +332,11 @@ class UserInviteView(LoginRequiredMixin, AdminRequiredMixin, FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['organization'] = get_user_org(self.request.user)
+        kwargs['organization'] = get_active_org(self.request)
         return kwargs
 
     def form_valid(self, form):
-        org = get_user_org(self.request.user)
+        org = get_active_org(self.request)
         if not org:
             messages.error(self.request, 'No organisation found.')
             return redirect('home')
@@ -320,13 +348,9 @@ class UserInviteView(LoginRequiredMixin, AdminRequiredMixin, FormView):
             last_name=form.cleaned_data['last_name'],
             password=get_random_string(20),
         )
-        profile = user.profile
-        profile.organization = org
-        profile.role = form.cleaned_data['role']
-        profile.save()
-
+        Membership.objects.create(user=user, organization=org, role=form.cleaned_data['role'])
         for team in form.cleaned_data['teams']:
-            profile.teams.add(team)
+            user.profile.teams.add(team)
 
         self._send_invite_email(user, org)
 
@@ -351,7 +375,7 @@ class UserInviteView(LoginRequiredMixin, AdminRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['org'] = get_user_org(self.request.user)
+        ctx['org'] = get_active_org(self.request)
         return ctx
 
 
@@ -373,8 +397,9 @@ class TeamSwitchView(LoginRequiredMixin, View):
     """POST-only: switch the active team stored in the session."""
 
     def post(self, request, pk):
-        team = get_object_or_404(request.user.profile.teams, pk=pk)
-        request.session['active_team_id'] = team.pk
+        org = get_active_org(request)
+        team = get_object_or_404(request.user.profile.teams, pk=pk, organization=org)
+        request.session[SESSION_TEAM_KEY] = team.pk
         return redirect(safe_next_url(request))
 
 
@@ -391,11 +416,8 @@ class SearchView(LoginRequiredMixin, View):
         if len(query) < 2:
             return render(request, self.template_name, {'query': query, 'too_short': len(query) > 0})
 
-        # All teams the user belongs to — scope every query to this set
-        try:
-            user_teams = list(request.user.profile.teams.all())
-        except AttributeError:
-            user_teams = []
+        org = get_active_org(request)
+        user_teams = list(request.user.profile.teams.filter(organization=org)) if org else []
 
         if not user_teams:
             return render(request, self.template_name, {'query': query, 'no_teams': True})

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Organization, Team, UserProfile
+from .models import Membership, Organization, Team, UserProfile
 
 
 class OrganizationForm(forms.ModelForm):
@@ -83,7 +83,7 @@ class InviteUserForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     role = forms.ChoiceField(
-        choices=UserProfile.ROLE_CHOICES,
+        choices=Membership.ROLE_CHOICES,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     teams = forms.ModelMultipleChoiceField(
@@ -120,7 +120,7 @@ class TeamMemberForm(forms.Form):
         if organization:
             users = (
                 User.objects
-                .filter(profile__organization=organization)
+                .filter(memberships__organization=organization)
                 .order_by('first_name', 'username')
             )
         self.fields['users'].queryset = users

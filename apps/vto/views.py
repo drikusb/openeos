@@ -6,12 +6,12 @@ from django.contrib import messages
 
 from .models import VTO, VTOCoreValue, VTOSection, VTOSectionHistory, SectionKey
 from .forms import VTOSectionForm, VTOCoreValueForm
-from apps.accounts.scoping import OrgScopedMixin, get_user_org
+from apps.accounts.scoping import OrgScopedMixin, get_active_org
 from apps.rocks.models import Rock
 
 
-def _get_vto(user):
-    org = get_user_org(user)
+def _get_vto(request):
+    org = get_active_org(request)
     if not org:
         return None
     return VTO.for_org(org)
@@ -63,7 +63,7 @@ class VTODetailView(LoginRequiredMixin, View):
     template_name = 'vto/vto_detail.html'
 
     def get(self, request):
-        org = get_user_org(request.user)
+        org = get_active_org(request)
         if not org:
             messages.warning(request, 'Set up your organisation first.')
             return redirect('accounts:org_setup')
@@ -76,7 +76,7 @@ class VTOPrintView(LoginRequiredMixin, View):
     template_name = 'vto/vto_print.html'
 
     def get(self, request):
-        org = get_user_org(request.user)
+        org = get_active_org(request)
         if not org:
             return redirect('accounts:org_setup')
         vto = VTO.for_org(org)
@@ -99,7 +99,7 @@ class VTOSectionEditView(LoginRequiredMixin, View):
         if key not in SectionKey.ALL:
             messages.error(request, 'Unknown section.')
             return redirect('vto:detail')
-        vto = _get_vto(request.user)
+        vto = _get_vto(request)
         if not vto:
             return redirect('accounts:org_setup')
         section = self._get_or_create_section(vto, key)
@@ -114,7 +114,7 @@ class VTOSectionEditView(LoginRequiredMixin, View):
     def post(self, request, key):
         if key not in SectionKey.ALL:
             return redirect('vto:detail')
-        vto = _get_vto(request.user)
+        vto = _get_vto(request)
         if not vto:
             return redirect('accounts:org_setup')
         section = self._get_or_create_section(vto, key)
@@ -145,7 +145,7 @@ class CoreValueCreateView(LoginRequiredMixin, View):
         })
 
     def post(self, request):
-        vto = _get_vto(request.user)
+        vto = _get_vto(request)
         if not vto:
             return redirect('accounts:org_setup')
         form = VTOCoreValueForm(request.POST)

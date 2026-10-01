@@ -2,15 +2,15 @@ from django.core import mail
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from apps.accounts.models import Organization, Team, UserProfile
+from apps.accounts.models import Membership, Organization, Team
 
 
 class UserInviteEmailTest(TestCase):
     def setUp(self):
         self.org = Organization.objects.create(name='Invite Test Org')
         self.admin = User.objects.create_user(username='orgadmin', password='pw')
-        UserProfile.objects.filter(user=self.admin).update(
-            organization=self.org, role=UserProfile.ROLE_ADMIN
+        Membership.objects.create(
+            user=self.admin, organization=self.org, role=Membership.ROLE_ADMIN
         )
         self.team = Team.objects.create(organization=self.org, name='Invite Team')
         self.client.force_login(self.admin)
@@ -21,7 +21,7 @@ class UserInviteEmailTest(TestCase):
             'email': 'newperson@example.com',
             'first_name': 'New',
             'last_name': 'Person',
-            'role': UserProfile.ROLE_MEMBER,
+            'role': Membership.ROLE_MEMBER,
             'teams': [self.team.pk],
         })
         self.assertEqual(resp.status_code, 302)
@@ -32,12 +32,12 @@ class UserInviteEmailTest(TestCase):
 
     def test_non_admin_cannot_invite(self):
         member = User.objects.create_user(username='plainmember', password='pw')
-        UserProfile.objects.filter(user=member).update(organization=self.org)
+        Membership.objects.create(user=member, organization=self.org)
         self.client.force_login(member)
         resp = self.client.post('/users/invite/', {
             'username': 'blocked',
             'email': 'blocked@example.com',
-            'role': UserProfile.ROLE_MEMBER,
+            'role': Membership.ROLE_MEMBER,
         })
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(len(mail.outbox), 0)

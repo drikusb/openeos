@@ -124,7 +124,7 @@ Common prefixes:
 
 ```
 apps/
-  accounts/       # Organisations, teams, user profiles
+  accounts/       # Organisations, memberships, teams, user profiles
   rocks/          # Quarterly priorities (Rocks), milestones
   issues/         # Issues with IDS workflow and delegation
   todos/          # Weekly To-Dos
@@ -145,6 +145,8 @@ nginx/            # Nginx config for production
 ```
 
 Each EOS module lives in its own Django app. Views are class-based. Forms receive a `team=` kwarg so querysets are always scoped to the active team — do not pass `team` as a form field.
+
+Every record reachable by primary key must be limited to the active organisation. Use `OrgScopedMixin` on generic detail, update and delete views and `get_org_object_or_404()` in plain `View` classes (both in `apps/accounts/scoping.py`), and add the new URL to `apps/accounts/tests/test_isolation.py`.
 
 ---
 

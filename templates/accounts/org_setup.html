@@ -13,8 +13,13 @@
         <div class="col-sm-10 col-md-7 col-lg-5">
             <div class="text-center mb-4">
                 <i class="bi bi-diagram-3-fill display-4 text-dark"></i>
+                {% if is_first_org %}
                 <h1 class="h3 mt-2 fw-bold">Welcome to EOS App</h1>
                 <p class="text-muted">Let's start by naming your organisation.</p>
+                {% else %}
+                <h1 class="h3 mt-2 fw-bold">New organisation</h1>
+                <p class="text-muted">You will be its first admin and can switch to it from the navbar.</p>
+                {% endif %}
             </div>
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">

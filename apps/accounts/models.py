@@ -55,7 +55,9 @@ class Team(models.Model):
         return self.members.count()
 
 
-class UserProfile(models.Model):
+class Membership(models.Model):
+    """A user's place in one organisation. A user may belong to several."""
+
     ROLE_ADMIN = 'admin'
     ROLE_LEADER = 'leader'
     ROLE_MEMBER = 'member'
@@ -65,18 +67,32 @@ class UserProfile(models.Model):
         (ROLE_MEMBER, 'Team Member'),
     ]
 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name='memberships'
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['organization__name']
+        unique_together = [['user', 'organization']]
+        verbose_name = 'Membership'
+        verbose_name_plural = 'Memberships'
+
+    def __str__(self):
+        return f'{self.user} — {self.organization} ({self.get_role_display()})'
+
+    def is_admin(self):
+        return self.role == self.ROLE_ADMIN
+
+
+class UserProfile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='profile'
     )
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='members',
-    )
     teams = models.ManyToManyField(Team, blank=True, related_name='members')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MEMBER)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -93,9 +109,6 @@ class UserProfile(models.Model):
 
     def display_name(self):
         return self.user.get_full_name() or self.user.username
-
-    def is_admin(self):
-        return self.role == self.ROLE_ADMIN or self.user.is_superuser
 
 
 @receiver(post_save, sender=User)

@@ -26,7 +26,7 @@ class NodeForm(forms.ModelForm):
         if org:
             owners = (
                 User.objects
-                .filter(profile__organization=org)
+                .filter(memberships__organization=org)
                 .order_by('first_name', 'last_name', 'username')
             )
         self.fields['owner'].queryset = owners
