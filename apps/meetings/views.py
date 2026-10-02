@@ -200,6 +200,22 @@ class MeetingDetailView(LoginRequiredMixin, View):
         return render(request, self.template_name, ctx)
 
 
+class MeetingPrintView(LoginRequiredMixin, View):
+    """Print-friendly export of a completed meeting's notes and summary."""
+    template_name = 'meetings/meeting_print.html'
+
+    def get(self, request, pk):
+        org = _get_org(request.user)
+        if not org:
+            return redirect('accounts:org_setup')
+        meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
+        if not meeting.is_complete:
+            messages.warning(request, 'Finish the meeting before exporting its notes.')
+            return redirect('meetings:detail', pk=pk)
+        ctx = _build_runner_context(meeting, request.user)
+        return render(request, self.template_name, ctx)
+
+
 class MeetingStartView(LoginRequiredMixin, View):
     def post(self, request, pk):
         org = _get_org(request.user)

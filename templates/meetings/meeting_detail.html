@@ -39,6 +39,10 @@
             <i class="bi bi-play-fill me-1"></i>Start Meeting
         </button>
     </form>
+    {% elif meeting.is_complete %}
+    <a href="{% url 'meetings:print' meeting.pk %}" class="btn btn-outline-secondary" target="_blank">
+        <i class="bi bi-printer me-1"></i>Export PDF
+    </a>
     {% endif %}
 </div>
 
