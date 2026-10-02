@@ -87,7 +87,7 @@ class RockBadgeTest(TestCase):
 
     def test_badge_dropped(self):
         self.rock.status = Rock.STATUS_DROPPED
-        self.assertEqual(self.rock.status_badge_class, 'light text-dark')
+        self.assertEqual(self.rock.status_badge_class, 'light text-dark border')
 
     def test_quarter_label(self):
         self.assertEqual(self.rock.quarter_label, 'Q1 2026')
