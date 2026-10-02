@@ -38,13 +38,13 @@
                                    autofocus required>
                         </div>
 
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between">
-                                <label for="id_password" class="form-label">Password</label>
-                                <a href="{% url 'password_reset' %}" class="small text-muted">Forgot password?</a>
-                            </div>
+                        <div class="mb-2">
+                            <label for="id_password" class="form-label">Password</label>
                             <input type="password" name="password" id="id_password"
                                    class="form-control" autocomplete="current-password" required>
+                        </div>
+                        <div class="d-flex justify-content-end mb-4">
+                            <a href="{% url 'password_reset' %}" class="small text-muted">Forgot password?</a>
                         </div>
 
                         <button type="submit" class="btn btn-dark w-100">
