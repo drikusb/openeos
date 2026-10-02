@@ -100,7 +100,7 @@
                         <input type="date"
                                name="{{ form.due_date.html_name }}"
                                id="{{ form.due_date.id_for_label }}"
-                               value="{{ form.due_date.value|date:'Y-m-d'|default:'' }}"
+                               value="{% if form.is_bound %}{{ form.due_date.value|default:'' }}{% else %}{{ form.due_date.value|date:'Y-m-d' }}{% endif %}"
                                class="form-control {% if form.due_date.errors %}is-invalid{% endif %}">
                         <div class="form-text">EOS standard: 7 days from today.</div>
                         {% for error in form.due_date.errors %}
