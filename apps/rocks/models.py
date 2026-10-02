@@ -108,7 +108,7 @@ class Rock(models.Model):
             self.STATUS_ON_TRACK: 'success',
             self.STATUS_OFF_TRACK: 'danger',
             self.STATUS_COMPLETE: 'secondary',
-            self.STATUS_DROPPED: 'light',
+            self.STATUS_DROPPED: 'light text-dark',
         }.get(self.status, 'secondary')
 
     # --- Milestone helpers ---
