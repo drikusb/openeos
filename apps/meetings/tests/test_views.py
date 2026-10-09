@@ -3,7 +3,7 @@ from datetime import date
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from apps.accounts.models import Organization, Team
+from apps.accounts.models import Membership, Organization, Team
 from apps.meetings.models import Meeting, MeetingNote, Headline, MeetingRating, SegueEntry
 
 
@@ -12,9 +12,8 @@ class MeetingPrintViewTest(TestCase):
         self.org = Organization.objects.create(name='Print Org')
         self.team = Team.objects.create(organization=self.org, name='Print Team')
         self.user = User.objects.create_user(username='printuser', password='pw')
-        self.user.profile.organization = self.org
+        Membership.objects.create(user=self.user, organization=self.org)
         self.user.profile.teams.add(self.team)
-        self.user.profile.save()
         self.meeting = Meeting.objects.create(
             team=self.team, scheduled_date=date.today(),
             status=Meeting.STATUS_ACTIVE, created_by=self.user,

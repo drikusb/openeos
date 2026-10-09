@@ -79,6 +79,7 @@ def pk_urls(f):
         f'/teams/{f["team"].pk}/',
         f'/teams/{f["team"].pk}/edit/',
         f'/meetings/{f["meeting"].pk}/',
+        f'/meetings/{f["meeting"].pk}/print/',
         f'/accountability/nodes/{f["node"].pk}/edit/',
         f'/accountability/nodes/{f["node"].pk}/delete/',
         f'/accountability/nodes/{f["node"].pk}/roles/add/',

@@ -205,7 +205,7 @@ class MeetingPrintView(LoginRequiredMixin, View):
     template_name = 'meetings/meeting_print.html'
 
     def get(self, request, pk):
-        org = _get_org(request.user)
+        org = _get_org(request)
         if not org:
             return redirect('accounts:org_setup')
         meeting = get_object_or_404(Meeting, pk=pk, team__organization=org)
