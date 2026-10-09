@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.ScorecardListView.as_view(), name='list'),
     path('new/', views.ScorecardCreateView.as_view(), name='create'),
     path('<int:pk>/', views.ScorecardDetailView.as_view(), name='detail'),
+    path('<int:pk>/export/', views.ScorecardCsvExportView.as_view(), name='export_csv'),
     path('<int:pk>/edit/', views.ScorecardUpdateView.as_view(), name='update'),
     path('<int:pk>/delete/', views.ScorecardDeleteView.as_view(), name='delete'),
     path('<int:pk>/enter/', views.ScorecardEntryView.as_view(), name='enter'),

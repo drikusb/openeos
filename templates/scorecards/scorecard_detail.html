@@ -22,6 +22,9 @@
         <a href="{% url 'scorecards:enter' scorecard.pk %}" class="btn btn-primary">
             <i class="bi bi-pencil-square me-1"></i>Enter this week
         </a>
+        <a href="{% url 'scorecards:export_csv' scorecard.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
         <div class="dropdown">
             <button class="btn btn-outline-secondary" data-bs-toggle="dropdown">
                 <i class="bi bi-three-dots"></i>

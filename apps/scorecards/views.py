@@ -1,10 +1,13 @@
+import csv
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
+from django.utils.text import slugify
 from django.contrib import messages
 
 from .models import Scorecard, ScorecardMetric, ScorecardEntry, _current_week_start, _current_month_start
@@ -28,6 +31,32 @@ def _build_periods(n=13, frequency='weekly'):
         if m == 0:
             m, y = 12, y - 1
     return list(reversed(periods))
+
+
+def _build_scorecard_table(scorecard):
+    """Build the 13-week periods and per-metric cell table for a scorecard's history.
+
+    Returns (periods, table) where periods is oldest→newest period-start dates and
+    table is [{'metric': m, 'cells': [entry|None, ...]}] aligned to those periods.
+    Shared by the detail view and the CSV export so both render the same data.
+    """
+    metrics = list(scorecard.active_metrics.select_related('owner', 'owner__profile'))
+    periods = _build_periods(13, 'weekly')
+
+    entry_map = {
+        (e.metric_id, e.period_start): e
+        for e in ScorecardEntry.objects.filter(
+            metric__scorecard=scorecard,
+            period_start__gte=periods[0],
+            period_start__lte=periods[-1],
+        ).select_related('entered_by')
+    }
+
+    table = [
+        {'metric': m, 'cells': [entry_map.get((m.pk, p)) for p in periods]}
+        for m in metrics
+    ]
+    return periods, table
 
 
 # ---------------------------------------------------------------------------
@@ -144,33 +173,38 @@ class ScorecardDetailView(LoginRequiredMixin, OrgScopedMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         sc = self.object
-        metrics = list(sc.active_metrics.select_related('owner', 'owner__profile'))
-        current_week = _current_week_start()
-
-        # Build 13 weekly periods (oldest → newest)
-        periods = _build_periods(13, 'weekly')
-
-        # Fetch all entries in range for this scorecard
-        entry_map = {
-            (e.metric_id, e.period_start): e
-            for e in ScorecardEntry.objects.filter(
-                metric__scorecard=sc,
-                period_start__gte=periods[0],
-                period_start__lte=periods[-1],
-            ).select_related('entered_by')
-        }
-
-        # Build table rows: [{metric, cells: [entry|None, ...]}]
-        table = []
-        for m in metrics:
-            cells = [entry_map.get((m.pk, p)) for p in periods]
-            table.append({'metric': m, 'cells': cells})
+        periods, table = _build_scorecard_table(sc)
 
         ctx['periods'] = periods
         ctx['table'] = table
-        ctx['current_week'] = current_week
+        ctx['current_week'] = _current_week_start()
         ctx['metric_form'] = ScorecardMetricForm(organization=sc.team.organization)
         return ctx
+
+
+class ScorecardCsvExportView(LoginRequiredMixin, View):
+    """Export a scorecard's 13-week history as CSV."""
+
+    def get(self, request, pk):
+        scorecard = get_org_object_or_404(request, Scorecard, pk=pk)
+        periods, table = _build_scorecard_table(scorecard)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = (
+            f'attachment; filename="{slugify(scorecard.name)}-scorecard.csv"'
+        )
+
+        writer = csv.writer(response)
+        writer.writerow(['Metric', 'Owner', 'Goal'] + [p.isoformat() for p in periods])
+        for row in table:
+            metric = row['metric']
+            owner_name = metric.owner.get_full_name() or metric.owner.username
+            cells = [
+                metric.format_value(entry.value) if entry else ''
+                for entry in row['cells']
+            ]
+            writer.writerow([metric.name, owner_name, metric.format_goal()] + cells)
+        return response
 
 
 # ---------------------------------------------------------------------------

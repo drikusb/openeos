@@ -69,6 +69,7 @@ def pk_urls(f):
         f'/todos/{f["todo"].pk}/edit/',
         f'/todos/{f["todo"].pk}/delete/',
         f'/scorecards/{f["scorecard"].pk}/',
+        f'/scorecards/{f["scorecard"].pk}/export/',
         f'/scorecards/{f["scorecard"].pk}/edit/',
         f'/scorecards/{f["scorecard"].pk}/delete/',
         f'/scorecards/{f["scorecard"].pk}/enter/',
