@@ -7,7 +7,10 @@
     <div class="col">
         <h1 class="h3 mb-0"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Issues</h1>
     </div>
-    <div class="col-auto">
+    <div class="col-auto d-flex gap-2">
+        <a href="{% url 'issues:export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
         <a href="{% url 'issues:create' %}" class="btn btn-dark">
             <i class="bi bi-plus-lg me-1"></i>New Issue
         </a>

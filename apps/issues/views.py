@@ -1,9 +1,11 @@
+import csv
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 
 from .models import Issue, IssueActivity
 from .forms import IssueForm, IssueStatusForm, IssueDelegateForm, IssueCommentForm
@@ -29,6 +31,39 @@ def _can_edit(user, issue):
     )
 
 
+def _filtered_issues(request):
+    """Shared filter logic for the Issue list and its CSV export, so the
+    export always matches whatever the list page is currently showing."""
+    team = get_active_team(request)
+    if not team:
+        return Issue.objects.none()
+    qs = (
+        Issue.objects
+        .filter(originating_team=team)
+        .select_related('originating_team', 'delegated_to_team', 'created_by', 'created_by__profile')
+        .prefetch_related('linked_rocks')
+    )
+    # View filter: 'delegated' shows issues delegated TO the active team
+    view = request.GET.get('view', '')
+    if view == 'delegated':
+        qs = Issue.objects.filter(delegated_to_team=team).select_related(
+            'originating_team', 'delegated_to_team', 'created_by', 'created_by__profile'
+        ).prefetch_related('linked_rocks')
+    # Status filter
+    status = request.GET.get('status', '')
+    if status in dict(Issue.STATUS_CHOICES):
+        qs = qs.filter(status=status)
+    elif not status:
+        qs = qs.filter(status__in=[Issue.STATUS_OPEN, Issue.STATUS_IN_IDS])
+    elif status == 'all':
+        pass
+    # Type filter
+    issue_type = request.GET.get('type', '')
+    if issue_type in dict(Issue.TYPE_CHOICES):
+        qs = qs.filter(issue_type=issue_type)
+    return qs
+
+
 # ---------------------------------------------------------------------------
 # List
 # ---------------------------------------------------------------------------
@@ -39,34 +74,7 @@ class IssueListView(LoginRequiredMixin, ListView):
     context_object_name = 'issues'
 
     def get_queryset(self):
-        team = get_active_team(self.request)
-        if not team:
-            return Issue.objects.none()
-        qs = (
-            Issue.objects
-            .filter(originating_team=team)
-            .select_related('originating_team', 'delegated_to_team', 'created_by', 'created_by__profile')
-            .prefetch_related('linked_rocks')
-        )
-        # View filter: 'delegated' shows issues delegated TO the active team
-        view = self.request.GET.get('view', '')
-        if view == 'delegated':
-            qs = Issue.objects.filter(delegated_to_team=team).select_related(
-                'originating_team', 'delegated_to_team', 'created_by', 'created_by__profile'
-            ).prefetch_related('linked_rocks')
-        # Status filter
-        status = self.request.GET.get('status', '')
-        if status in dict(Issue.STATUS_CHOICES):
-            qs = qs.filter(status=status)
-        elif not status:
-            qs = qs.filter(status__in=[Issue.STATUS_OPEN, Issue.STATUS_IN_IDS])
-        elif status == 'all':
-            pass
-        # Type filter
-        issue_type = self.request.GET.get('type', '')
-        if issue_type in dict(Issue.TYPE_CHOICES):
-            qs = qs.filter(issue_type=issue_type)
-        return qs
+        return _filtered_issues(self.request)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -247,3 +255,39 @@ class IssueCommentView(LoginRequiredMixin, View):
             _log(issue, request.user, IssueActivity.ACTION_COMMENT,
                  notes=form.cleaned_data['notes'])
         return redirect('issues:detail', pk=pk)
+
+
+# ---------------------------------------------------------------------------
+# CSV export
+# ---------------------------------------------------------------------------
+
+class IssueCsvExportView(LoginRequiredMixin, View):
+    """Export whatever the Issue list page is currently showing as CSV.
+
+    Reuses ``_filtered_issues`` so the export always mirrors the same team
+    and filters (status/type/view) as the list page, rather than hardcoding
+    an "open issues only" rule.
+    """
+
+    def get(self, request):
+        issues = _filtered_issues(request)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="issues_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Type', 'Status', 'Originating Team', 'Delegated To', 'Created By', 'Created At'])
+        for issue in issues:
+            created_by = (
+                (issue.created_by.get_full_name() or issue.created_by.username)
+                if issue.created_by else ''
+            )
+            delegated_to = issue.delegated_to_team.name if issue.delegated_to_team else ''
+            writer.writerow([
+                issue.title,
+                issue.get_issue_type_display(),
+                issue.get_status_display(),
+                issue.originating_team.name,
+                delegated_to,
+                created_by,
+                issue.created_at.date().isoformat(),
+            ])
+        return response

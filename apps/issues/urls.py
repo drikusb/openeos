@@ -5,6 +5,7 @@ app_name = 'issues'
 
 urlpatterns = [
     path('', views.IssueListView.as_view(), name='list'),
+    path('export/', views.IssueCsvExportView.as_view(), name='export_csv'),
     path('new/', views.IssueCreateView.as_view(), name='create'),
     path('<int:pk>/', views.IssueDetailView.as_view(), name='detail'),
     path('<int:pk>/edit/', views.IssueUpdateView.as_view(), name='update'),
