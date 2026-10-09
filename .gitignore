@@ -39,17 +39,3 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-
-# BrainTree (brain knowledge files — not part of the app source)
-BRAIN-INDEX.md
-CLAUDE.md
-Execution-Plan.md
-Architecture/
-Assets/
-Build/
-DevOps/
-Go-To-Market/
-Handoffs/
-Modules/
-Templates/
-Vision/
