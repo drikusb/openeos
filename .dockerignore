@@ -1,0 +1,40 @@
+# Version control and project tooling
+.git
+.github
+.claude
+.braintree
+.docker/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Build and runtime artefacts (entrypoint.sh regenerates staticfiles/)
+staticfiles/
+mediafiles/
+db.sqlite3
+*.log
+
+# Python caches and virtualenvs
+**/__pycache__/
+*.pyc
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Test and coverage output
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# Editor and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
