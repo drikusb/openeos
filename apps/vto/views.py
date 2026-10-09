@@ -34,7 +34,7 @@ def _long_term_issues(org):
     return (
         Issue.objects
         .filter(originating_team__organization=org,
-                issue_type=Issue.TYPE_LONG_TERM,
+                issue_type=Issue.TYPE_LONG_TERM, is_company_issue=True,
                 status__in=[Issue.STATUS_OPEN, Issue.STATUS_IN_IDS])
         .select_related('originating_team')
         .order_by('target_year', 'target_quarter', 'title')

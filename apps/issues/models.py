@@ -37,6 +37,10 @@ class Issue(models.Model):
     issue_type = models.CharField(
         max_length=20, choices=TYPE_CHOICES, default=TYPE_SHORT_TERM
     )
+    is_company_issue = models.BooleanField(
+        default=False,
+        help_text='Company-wide long-term Issues appear on the VTO. Other Issues stay on their team\'s own list.',
+    )
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN
     )

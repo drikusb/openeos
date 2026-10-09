@@ -20,6 +20,11 @@
                     <span class="badge bg-info text-dark">Short-term</span>
                     {% endif %}
                     <span class="badge bg-{{ issue.status_badge_class }}">{{ issue.get_status_display }}</span>
+                    {% if issue.is_company_issue %}
+                    <span class="badge bg-dark" title="Shown on the VTO">
+                        <i class="bi bi-building me-1"></i>Company Issue
+                    </span>
+                    {% endif %}
                     {% if issue.is_delegated %}
                     <span class="badge bg-primary"><i class="bi bi-arrow-right me-1"></i>{{ issue.delegated_to_team.name }}</span>
                     {% endif %}

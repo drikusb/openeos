@@ -180,6 +180,22 @@
                     </div>
                     {% endif %}
 
+                    {# Company-wide flag (admins only, field is omitted entirely otherwise).
+                       Only shown for long-term issues, since that's the only kind the VTO displays. #}
+                    {% if form.is_company_issue %}
+                    <div class="form-check mb-3" id="company-issue-field" style="display:none">
+                        <input type="checkbox"
+                               name="{{ form.is_company_issue.html_name }}"
+                               id="{{ form.is_company_issue.id_for_label }}"
+                               class="form-check-input"
+                               {% if form.is_company_issue.value %}checked{% endif %}>
+                        <label for="{{ form.is_company_issue.id_for_label }}" class="form-check-label">
+                            Company-wide Issue
+                        </label>
+                        <div class="form-text">Shows this long-term Issue on the VTO, instead of just this team's Issues list.</div>
+                    </div>
+                    {% endif %}
+
                     <hr class="my-4">
 
                     <div class="d-flex gap-2">
@@ -201,6 +217,13 @@
 function toggleLongTermFields() {
     const isLongTerm = document.getElementById('type_long_term').checked;
     document.getElementById('long-term-fields').style.display = isLongTerm ? '' : 'none';
+    const companyIssueField = document.getElementById('company-issue-field');
+    if (companyIssueField) {
+        companyIssueField.style.display = isLongTerm ? '' : 'none';
+        if (!isLongTerm) {
+            companyIssueField.querySelector('input[type="checkbox"]').checked = false;
+        }
+    }
 }
 // Run on page load to restore state after form errors
 document.addEventListener('DOMContentLoaded', toggleLongTermFields);

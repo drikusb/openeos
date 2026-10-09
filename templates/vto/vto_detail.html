@@ -279,7 +279,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-2">
             <div>
-                <span class="fw-semibold small"><i class="bi bi-exclamation-triangle me-1 text-warning"></i>Issues List</span>
+                <span class="fw-semibold small"><i class="bi bi-exclamation-triangle me-1 text-warning"></i>Company Issues List</span>
                 <div class="text-muted" style="font-size:.7rem">Long-term strategic issues · live from Issues module</div>
             </div>
             <a href="{% url 'issues:create' %}" class="btn btn-sm btn-outline-secondary border-0 py-0">
@@ -302,7 +302,7 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-muted small fst-italic mb-0">No long-term issues. <a href="{% url 'issues:create' %}">Add one.</a></p>
+            <p class="text-muted small fst-italic mb-0">No company-wide long-term issues. <a href="{% url 'issues:list' %}">Mark one as company-wide</a> from its edit screen.</p>
             {% endif %}
         </div>
     </div>

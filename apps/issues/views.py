@@ -92,6 +92,7 @@ class IssueCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['team'] = get_active_team(self.request)
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):
@@ -125,6 +126,7 @@ class IssueUpdateView(LoginRequiredMixin, OrgScopedMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['team'] = self.get_object().originating_team
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):

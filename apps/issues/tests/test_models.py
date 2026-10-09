@@ -104,3 +104,13 @@ class IssueActivityIconTest(TestCase):
     def test_icon_delegated(self):
         a = self._make_activity(IssueActivity.ACTION_DELEGATED)
         self.assertIn('bi-', a.icon)
+
+
+class IssueIsCompanyIssueTest(TestCase):
+    def test_defaults_to_false(self):
+        issue = make_issue()
+        self.assertFalse(issue.is_company_issue)
+
+    def test_can_be_set_true(self):
+        issue = make_issue(is_company_issue=True)
+        self.assertTrue(issue.is_company_issue)

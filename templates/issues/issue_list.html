@@ -88,6 +88,9 @@
                     <a href="{{ issue.get_absolute_url }}" class="text-decoration-none text-dark fw-semibold">
                         {{ issue.title }}
                     </a>
+                    {% if issue.is_company_issue %}
+                    <i class="bi bi-building text-muted ms-1" title="Company Issue, shown on the VTO"></i>
+                    {% endif %}
                     <div class="text-muted small mt-1 d-flex gap-2 flex-wrap align-items-center">
                         <span>
                             <i class="bi bi-people me-1"></i>{{ issue.originating_team.name }}

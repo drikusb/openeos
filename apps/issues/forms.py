@@ -1,6 +1,7 @@
 from django import forms
 
 from apps.accounts.models import Team
+from apps.accounts.scoping import is_org_admin
 from apps.rocks.models import Rock
 from .models import Issue, IssueActivity
 
@@ -14,14 +15,20 @@ class IssueForm(forms.ModelForm):
             'delegated_to_team',
             'linked_rocks',
             'target_quarter', 'target_year',
+            'is_company_issue',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'target_year': forms.NumberInput(attrs={'min': 2020, 'max': 2099}),
+            'is_company_issue': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-    def __init__(self, *args, team=None, **kwargs):
+    def __init__(self, *args, team=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Only an admin of the team's organisation may mark an Issue company-wide
+        is_admin = bool(user) and is_org_admin(user, team.organization if team else None)
+        if not is_admin:
+            del self.fields['is_company_issue']
         if team:
             # Delegation can go to any team in the org
             org_teams = Team.objects.filter(organization=team.organization).order_by('name')
@@ -50,6 +57,10 @@ class IssueForm(forms.ModelForm):
                 self.add_error('target_quarter', 'Required for long-term issues.')
             if not target_year:
                 self.add_error('target_year', 'Required for long-term issues.')
+        elif 'is_company_issue' in cleaned_data:
+            # Company-wide only means anything for long-term issues, the VTO only
+            # ever shows those. Don't let a short-term issue carry the flag.
+            cleaned_data['is_company_issue'] = False
         return cleaned_data
 
 
