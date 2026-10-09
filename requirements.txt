@@ -1,7 +1,9 @@
-Django>=5.0,<6.0
-psycopg2-binary
-gunicorn
-whitenoise
-Pillow
-python-decouple
-coverage
+# Versions are pinned so every build installs the same packages; Dependabot opens PRs for bumps.
+# To bump one by hand: edit the pin, `docker compose up --build`, then run `python manage.py test apps`.
+Django==5.2.18
+psycopg2-binary==2.9.13
+gunicorn==26.2.0
+whitenoise==6.12.0
+Pillow==12.3.0
+python-decouple==3.8
+coverage==7.16.2
