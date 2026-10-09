@@ -40,6 +40,8 @@ docker compose up --build
 
 The app will be available at **http://localhost:8000**.
 
+The `web` container runs as uid 1000 (user `app`), not root, and writes `staticfiles/` and `mediafiles/` into the bind-mounted checkout as that uid. On macOS this maps to your own user; on a Linux host, if your checkout is owned by a different uid, `chown` it or set `user:` on the `web` service in `docker-compose.yml`.
+
 On first run the entrypoint automatically runs `migrate` and `collectstatic`. A superuser is **not** created automatically — use the Django admin:
 
 ```bash

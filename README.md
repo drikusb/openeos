@@ -138,6 +138,10 @@ development.
 
 ---
 
+### 6. Running as a non-root user
+
+The `web` container runs as an unprivileged user (uid 1000, `app`) rather than root. The named `static_volume` and `media_volume` volumes pick up the right ownership automatically; if you swap them for bind-mounted host directories, those directories must be writable by uid 1000.
+
 ## Running Tests
 
 ```bash

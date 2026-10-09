@@ -17,6 +17,11 @@ services:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     entrypoint: ["/app/entrypoint.sh"]
+    # The container runs as uid 1000 (user "app"), so collectstatic and media
+    # uploads write into this bind-mounted checkout as that uid. Docker Desktop
+    # and Colima on macOS map it to your host user; on a Linux host the checkout
+    # must be owned by uid 1000. If yours is owned by another uid, either chown
+    # the checkout or add `user: "<uid>:<gid>"` to this service to match.
     volumes:
       - .:/app
     ports:
