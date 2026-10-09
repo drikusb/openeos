@@ -71,6 +71,7 @@ cp .env.example .env
 | `DJANGO_SUPERUSER_PASSWORD` | `adminpass` | Admin password created on first run |
 | `SECURE_SSL_REDIRECT` | `False` | Set `True` when TLS terminates at Nginx |
 | `SECURE_HSTS_SECONDS` | `0` | HSTS max-age in seconds (e.g. `31536000`) |
+| `MEDIA_ACCEL_REDIRECT` | `False` | Set `True` behind the bundled Nginx so it sends avatar files after Django has checked the request |
 
 ---
 
@@ -80,7 +81,7 @@ cp .env.example .env
 
 ```bash
 cp .env.example .env
-# Edit .env — set SECRET_KEY, ALLOWED_HOSTS, strong DB_PASSWORD, etc.
+# Edit .env — set SECRET_KEY, ALLOWED_HOSTS, strong DB_PASSWORD, MEDIA_ACCEL_REDIRECT=True, etc.
 ```
 
 Generate a secret key:
@@ -100,7 +101,11 @@ docker compose -f docker-compose.prod.yml up -d
 This starts:
 - **PostgreSQL 15** — database with persistent volume
 - **Gunicorn** — 3-worker Django WSGI server on port 8000 (internal only)
-- **Nginx** — reverse proxy on port 80, serves `/static/` and `/media/` directly
+- **Nginx** — reverse proxy on port 80, serves `/static/` and organisation logos under `/media/` directly
+
+**Uploaded files and privacy.** Organisation logos are public: they appear on the login page and are not personal data. User avatars are personal data, so `/media/avatars/` is never served straight from disk. Django checks every request and only returns an avatar to its owner, a superuser, or a member of an organisation the owner also belongs to; anyone else gets a 404. With `MEDIA_ACCEL_REDIRECT=True` Nginx still delivers the bytes (via `X-Accel-Redirect`) once Django has approved the request, so the extra check costs no Gunicorn worker time for the file transfer itself. Without a proxy, leave it unset and Django streams the file.
+
+`GET /healthz/` returns `{"status": "ok"}` (or HTTP 503 when the database is unreachable) and needs no login, so point container healthchecks and load balancer probes at it.
 
 ### 3. (Optional) TLS with a reverse proxy or load balancer
 

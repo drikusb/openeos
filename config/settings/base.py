@@ -96,6 +96,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'mediafiles'
+# Avatars are served through a permission-checked view. When a proxy such as
+# Nginx sits in front, let it send the bytes via X-Accel-Redirect instead of Django.
+MEDIA_ACCEL_REDIRECT = config('MEDIA_ACCEL_REDIRECT', default=False, cast=bool)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

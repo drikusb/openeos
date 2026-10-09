@@ -14,6 +14,7 @@ urlpatterns = [
     path('teams/<int:pk>/members/', views.TeamMembersUpdateView.as_view(), name='team_members'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
+    path('media/avatars/<path:name>', views.MediaAvatarView.as_view(), name='media_avatar'),
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('users/invite/', views.UserInviteView.as_view(), name='user_invite'),
     path('teams/<int:pk>/switch/', views.TeamSwitchView.as_view(), name='team_switch'),
