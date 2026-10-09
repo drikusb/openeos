@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 app_name = 'accounts'
@@ -13,6 +13,7 @@ urlpatterns = [
     path('teams/<int:pk>/edit/', views.TeamUpdateView.as_view(), name='team_update'),
     path('teams/<int:pk>/members/', views.TeamMembersUpdateView.as_view(), name='team_members'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('accounts/2fa/', include('apps.accounts.two_factor.urls')),
     path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('users/invite/', views.UserInviteView.as_view(), name='user_invite'),

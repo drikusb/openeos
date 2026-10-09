@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}New backup codes — EOS App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="mb-4">
+            <a href="{% url 'accounts:profile' %}" class="text-muted text-decoration-none small">
+                <i class="bi bi-arrow-left me-1"></i> Profile
+            </a>
+            <h1 class="h3 mt-2 mb-0">Generate new backup codes</h1>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <p class="text-muted">
+                    You have <strong>{{ backup_code_count }}</strong> unused backup code{{ backup_code_count|pluralize }}.
+                    Generating a new set replaces them all; the old codes stop working immediately.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-dark">
+                            <i class="bi bi-arrow-repeat me-1"></i> Generate new codes
+                        </button>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

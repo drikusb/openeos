@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Your backup codes — EOS App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="mb-4">
+            <h1 class="h3 mb-0">
+                {% if just_enabled %}Two-factor authentication is on{% else %}Your new backup codes{% endif %}
+            </h1>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Store these backup codes somewhere safe.</strong> They are shown only once.
+                    Each code signs you in one time if you lose access to your authenticator app.
+                </div>
+                <pre class="bg-light border rounded p-3 mb-3 user-select-all" id="backup-codes">{% for code in backup_codes %}{{ code }}
+{% endfor %}</pre>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-dark" id="copy-backup-codes">
+                        <i class="bi bi-clipboard me-1"></i> Copy codes
+                    </button>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-dark">
+                        <i class="bi bi-check-lg me-1"></i> I've saved them
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var button = document.getElementById('copy-backup-codes');
+    var codes = document.getElementById('backup-codes');
+    if (!button || !codes || !navigator.clipboard) return;
+    button.addEventListener('click', function () {
+        navigator.clipboard.writeText(codes.textContent.trim()).then(function () {
+            button.innerHTML = '<i class="bi bi-check-lg me-1"></i> Copied';
+        });
+    });
+}());
+</script>
+{% endblock %}

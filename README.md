@@ -17,6 +17,7 @@ Built with Django, Bootstrap 5, PostgreSQL, and Docker. No JavaScript frameworks
 | **Issues** | IDS® (Identify, Discuss, Solve) list with short-term / long-term types, cross-team delegation, and activity history |
 | **To-Dos** | Weekly action items with escalation levels, due dates, and Rock/Issue linking |
 | **Level 10 Meeting®** | Guided 90-minute meeting runner with timed segments, segue entries, headlines, IDS® integration, ratings, and cascading messages |
+| **Two-factor authentication** | Optional per user: an authenticator app (TOTP) plus ten single-use backup codes, set up from **My Profile**. Set `OTP_TOTP_ISSUER` to change the name shown in authenticator apps; a later change lets an organisation require it for its members |
 
 ---
 

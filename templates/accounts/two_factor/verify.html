@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Two-factor authentication — EOS App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-7 col-lg-5 col-xl-4">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-lock display-4 text-dark"></i>
+            <h1 class="h3 mt-2 mb-0">Two-factor authentication</h1>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <p class="text-muted">
+                    Enter the code from your authenticator app, or one of your backup codes.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ form.non_field_errors.0 }}
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="{{ form.token.id_for_label }}" class="form-label fw-semibold">{{ form.token.label }}</label>
+                        {{ form.token }}
+                        {% if form.token.errors %}
+                        <div class="text-danger small mt-1">{{ form.token.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Continue
+                    </button>
+                </form>
+                <form method="post" action="{% url 'logout' %}" class="mt-3 text-center">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-link btn-sm text-muted">Sign out instead</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -17,6 +17,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     # EOS modules — uncommented as each phase is built
     'apps.accounts',
     'apps.rocks',
@@ -43,6 +46,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'apps.accounts.two_factor.middleware.TwoFactorRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -102,6 +107,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Shown as the account label in authenticator apps.
+OTP_TOTP_ISSUER = config('OTP_TOTP_ISSUER', default='OpenEOS')
 
 # ── Email ────────────────────────────────────────────────────────────────────
 # Set EMAIL_HOST to enable SMTP; otherwise emails print to the console (dev-friendly default).

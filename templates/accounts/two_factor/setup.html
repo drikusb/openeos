@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Set up two-factor authentication — EOS App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="mb-4">
+            <a href="{% url 'accounts:profile' %}" class="text-muted text-decoration-none small">
+                <i class="bi bi-arrow-left me-1"></i> Profile
+            </a>
+            <h1 class="h3 mt-2 mb-0">Set up two-factor authentication</h1>
+        </div>
+
+        {% if already_enabled %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Two-factor authentication is already enabled. Finishing this setup replaces your
+            current authenticator and backup codes.
+        </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">1. Scan this code</h2>
+                <p class="text-muted">
+                    Open an authenticator app such as Google Authenticator, Microsoft Authenticator,
+                    Authy or 1Password and scan the QR code.
+                </p>
+                <div class="text-center mb-3">
+                    <img src="{{ qr_code }}" alt="QR code for your authenticator app" width="220" height="220" class="border rounded">
+                </div>
+                <p class="text-muted small mb-1">Can't scan? Enter this key by hand instead:</p>
+                <code class="d-block fs-6 user-select-all">{{ manual_key }}</code>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">2. Enter the 6-digit code</h2>
+                <p class="text-muted">Type the code your app shows now to confirm it is set up correctly.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="{{ form.token.id_for_label }}" class="form-label fw-semibold">{{ form.token.label }}</label>
+                        {{ form.token }}
+                        {% if form.token.errors %}
+                        <div class="text-danger small mt-1">{{ form.token.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-dark">
+                            <i class="bi bi-shield-check me-1"></i> Enable two-factor authentication
+                        </button>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
