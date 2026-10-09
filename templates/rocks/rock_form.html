@@ -135,7 +135,7 @@
                             <input type="date"
                                    name="{{ form.due_date.html_name }}"
                                    id="{{ form.due_date.id_for_label }}"
-                                   value="{{ form.due_date.value|date:'Y-m-d'|default:'' }}"
+                                   value="{% if form.is_bound %}{{ form.due_date.value|default:'' }}{% else %}{{ form.due_date.value|date:'Y-m-d' }}{% endif %}"
                                    class="form-control {% if form.due_date.errors %}is-invalid{% endif %}">
                             {% for error in form.due_date.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
@@ -161,6 +161,36 @@
                         {% for error in form.parent_rock.errors %}
                         <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {# Company-wide flag (admins only, field is omitted entirely otherwise) #}
+                    {% if form.is_company_rock %}
+                    <div class="form-check mb-3">
+                        <input type="checkbox"
+                               name="{{ form.is_company_rock.html_name }}"
+                               id="{{ form.is_company_rock.id_for_label }}"
+                               class="form-check-input"
+                               {% if form.is_company_rock.value %}checked{% endif %}>
+                        <label for="{{ form.is_company_rock.id_for_label }}" class="form-check-label">
+                            Company-wide Rock
+                        </label>
+                        <div class="form-text">Shows this Rock on the VTO, instead of just this team's Rock list.</div>
+                    </div>
+                    {% endif %}
+
+                    {# Cascade-demote confirmation (admins only, same as is_company_rock above) #}
+                    {% if form.confirm_demote_children and form.company_children.exists %}
+                    <div class="form-check mb-3">
+                        <input type="checkbox"
+                               name="{{ form.confirm_demote_children.html_name }}"
+                               id="{{ form.confirm_demote_children.id_for_label }}"
+                               class="form-check-input"
+                               {% if form.confirm_demote_children.value %}checked{% endif %}>
+                        <label for="{{ form.confirm_demote_children.id_for_label }}" class="form-check-label">
+                            {{ form.confirm_demote_children.label }}
+                        </label>
+                        <div class="form-text">Only takes effect if you also uncheck "Company-wide Rock" above and save.</div>
                     </div>
                     {% endif %}
 

@@ -251,7 +251,7 @@
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-2">
             <div>
-                <span class="fw-semibold small"><i class="bi bi-gem me-1 text-success"></i>Quarterly Rocks</span>
+                <span class="fw-semibold small"><i class="bi bi-gem me-1 text-success"></i>Company Rocks</span>
                 <div class="text-muted" style="font-size:.7rem">{{ rock_quarter }} · live from Rocks module</div>
             </div>
             <a href="{% url 'rocks:list' %}" class="btn btn-sm btn-outline-secondary border-0 py-0">
@@ -270,7 +270,7 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-muted small fst-italic mb-0">No active Rocks for {{ rock_quarter }}. <a href="{% url 'rocks:create' %}">Create one.</a></p>
+            <p class="text-muted small fst-italic mb-0">No company-wide Rocks for {{ rock_quarter }}. <a href="{% url 'rocks:list' %}">Mark one as company-wide</a> from its edit screen.</p>
             {% endif %}
         </div>
     </div>

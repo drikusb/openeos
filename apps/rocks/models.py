@@ -38,6 +38,10 @@ class Rock(models.Model):
     team = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name='rocks'
     )
+    is_company_rock = models.BooleanField(
+        default=False,
+        help_text='Company-wide Rocks appear on the VTO. Other Rocks stay on their team\'s own list.',
+    )
     quarter = models.PositiveSmallIntegerField(choices=QUARTER_CHOICES)
     year = models.PositiveSmallIntegerField()
     due_date = models.DateField()

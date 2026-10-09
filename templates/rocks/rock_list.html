@@ -117,6 +117,9 @@
                             <a href="{{ rock.get_absolute_url }}" class="text-decoration-none text-dark fw-semibold">
                                 {{ rock.title }}
                             </a>
+                            {% if rock.is_company_rock %}
+                            <i class="bi bi-building text-muted ms-1" title="Company Rock, shown on the VTO"></i>
+                            {% endif %}
                             {% if rock.child_rocks.exists %}
                             <i class="bi bi-diagram-2 text-muted ms-1" title="Has child Rocks"></i>
                             {% endif %}

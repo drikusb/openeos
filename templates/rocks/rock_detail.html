@@ -17,6 +17,11 @@
                     <span class="badge bg-{{ rock.status_badge_class }} fs-6 px-3">{{ rock.get_status_display }}</span>
                     <span class="badge bg-light text-dark border">Q{{ rock.quarter }} {{ rock.year }}</span>
                     <span class="badge bg-light text-dark border">{{ rock.team.name }}</span>
+                    {% if rock.is_company_rock %}
+                    <span class="badge bg-dark" title="Shown on the VTO">
+                        <i class="bi bi-building me-1"></i>Company Rock
+                    </span>
+                    {% endif %}
                     {% if rock.is_checkin_overdue %}
                     <span class="badge bg-warning text-dark" title="No check-in in 7+ days">
                         <i class="bi bi-clock-history me-1"></i>Check-in overdue

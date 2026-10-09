@@ -106,6 +106,7 @@ class RockCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['team'] = get_active_team(self.request)
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):
@@ -131,6 +132,7 @@ class RockUpdateView(LoginRequiredMixin, OrgScopedMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['team'] = self.get_object().team
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):

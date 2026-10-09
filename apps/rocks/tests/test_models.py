@@ -96,6 +96,16 @@ class RockBadgeTest(TestCase):
         self.assertEqual(str(self.rock), 'Test Rock')
 
 
+class RockIsCompanyRockTest(TestCase):
+    def test_defaults_to_false(self):
+        rock = make_rock()
+        self.assertFalse(rock.is_company_rock)
+
+    def test_can_be_set_true(self):
+        rock = make_rock(is_company_rock=True)
+        self.assertTrue(rock.is_company_rock)
+
+
 class RockQuarterTest(TestCase):
     def test_current_quarter_in_range(self):
         q = Rock.current_quarter()
