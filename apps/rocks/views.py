@@ -1,3 +1,4 @@
+import csv
 from datetime import date
 from itertools import groupby
 
@@ -8,7 +9,7 @@ from django.views.generic import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 
 from .models import Rock, RockCheckin, RockDependency, RockMilestone
 from .forms import RockForm, RockStatusForm, RockDependencyForm
@@ -92,6 +93,32 @@ class RockListView(LoginRequiredMixin, ListView):
         ctx['teams_rocks'] = [(get_active_team(self.request), rocks)] if rocks else []
         ctx['my_rocks'] = [r for r in rocks if r.owner == self.request.user]
         return ctx
+
+
+class RockCsvExportView(LoginRequiredMixin, View):
+    """GET-only: export the active team's rocks for the requested quarter as CSV."""
+
+    def get(self, request):
+        team = get_active_team(request)
+        quarter, year = get_quarter_year_from_request(request)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="rocks_q{quarter}_{year}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Owner', 'Status', 'Quarter', 'Year', 'Due Date'])
+        if team:
+            rocks = (
+                Rock.objects
+                .filter(team=team, quarter=quarter, year=year)
+                .select_related('owner')
+                .order_by('owner__first_name', 'owner__username', 'title')
+            )
+            for rock in rocks:
+                owner_name = rock.owner.get_full_name() or rock.owner.username
+                writer.writerow([
+                    rock.title, owner_name, rock.get_status_display(),
+                    rock.quarter, rock.year, rock.due_date.isoformat(),
+                ])
+        return response
 
 
 # ---------------------------------------------------------------------------

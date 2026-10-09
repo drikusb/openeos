@@ -8,6 +8,9 @@
         <h1 class="h3 mb-0"><i class="bi bi-gem me-2 text-success"></i>Rocks</h1>
     </div>
     <div class="col-auto d-flex gap-2">
+        <a href="{% url 'rocks:export_csv' %}?quarter={{ quarter }}&year={{ year }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
         <a href="{% url 'rocks:archive' %}?quarter={{ quarter }}&year={{ year }}" class="btn btn-outline-secondary">
             <i class="bi bi-clock-history me-1"></i>Archive
         </a>

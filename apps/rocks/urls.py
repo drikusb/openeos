@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.RockListView.as_view(), name='list'),
     path('new/', views.RockCreateView.as_view(), name='create'),
     path('archive/', views.RockArchiveView.as_view(), name='archive'),
+    path('export/', views.RockCsvExportView.as_view(), name='export_csv'),
     path('<int:pk>/', views.RockDetailView.as_view(), name='detail'),
     path('<int:pk>/edit/', views.RockUpdateView.as_view(), name='update'),
     path('<int:pk>/delete/', views.RockDeleteView.as_view(), name='delete'),
