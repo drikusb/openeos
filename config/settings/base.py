@@ -34,6 +34,10 @@ INSTALLED_APPS = [
     # 'apps.meetings',
 ]
 
+# Deployments can enable third-party or private apps without forking, e.g.
+# EXTRA_INSTALLED_APPS=django.contrib.sites,my_company.sso
+INSTALLED_APPS += config('EXTRA_INSTALLED_APPS', default='', cast=Csv())
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
