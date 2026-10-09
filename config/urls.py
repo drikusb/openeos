@@ -3,9 +3,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from apps.accounts.views import HomeView
+from apps.accounts.views import HealthzView, HomeView
 
 urlpatterns = [
+    path('healthz/', HealthzView.as_view(), name='healthz'),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('apps.accounts.urls', namespace='accounts')),

@@ -102,6 +102,8 @@ This starts:
 - **Gunicorn** — 3-worker Django WSGI server on port 8000 (internal only)
 - **Nginx** — reverse proxy on port 80, serves `/static/` and `/media/` directly
 
+`GET /healthz/` returns `{"status": "ok"}` (or HTTP 503 when the database is unreachable) and needs no login, so point container healthchecks and load balancer probes at it.
+
 ### 3. (Optional) TLS with a reverse proxy or load balancer
 
 Point your TLS-terminating proxy (Nginx, Caddy, Cloudflare Tunnel, etc.) at port 80 of the host. Then set in `.env`:

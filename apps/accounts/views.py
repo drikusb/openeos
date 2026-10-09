@@ -2,12 +2,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import (
     TemplateView, CreateView, UpdateView, ListView, DetailView, FormView, View,
 )
-from django.db import models
+from django.db import connection, models
+from django.db.utils import OperationalError
+from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.db.models import Prefetch, Q
 from django.utils.crypto import get_random_string
+from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse_lazy, reverse
+from django.views.decorators.cache import never_cache
 from django.contrib import messages
 from django.contrib.auth.models import User
 
@@ -27,6 +31,22 @@ class AdminRequiredMixin(UserPassesTestMixin):
         if not user.is_authenticated:
             return False
         return is_org_admin(user, get_active_org(self.request))
+
+
+# ---------------------------------------------------------------------------
+# Health check
+# ---------------------------------------------------------------------------
+
+@method_decorator(never_cache, name='dispatch')
+class HealthzView(View):
+    """Unauthenticated liveness/readiness probe for load balancers and container healthchecks."""
+
+    def get(self, request, *args, **kwargs):
+        try:
+            connection.ensure_connection()
+        except OperationalError:
+            return JsonResponse({'status': 'db-unavailable'}, status=503)
+        return JsonResponse({'status': 'ok'})
 
 
 # ---------------------------------------------------------------------------

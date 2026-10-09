@@ -1,4 +1,8 @@
+from unittest.mock import patch
+
 from django.core import mail
+from django.db import connection
+from django.db.utils import OperationalError
 from django.test import TestCase
 from django.contrib.auth.models import User
 
@@ -41,3 +45,16 @@ class UserInviteEmailTest(TestCase):
         })
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class HealthzViewTest(TestCase):
+    def test_anonymous_get_returns_ok(self):
+        resp = self.client.get('/healthz/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {'status': 'ok'})
+
+    def test_database_outage_returns_503(self):
+        with patch.object(connection, 'ensure_connection', side_effect=OperationalError('down')):
+            resp = self.client.get('/healthz/')
+        self.assertEqual(resp.status_code, 503)
+        self.assertEqual(resp.json(), {'status': 'db-unavailable'})
