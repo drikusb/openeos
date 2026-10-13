@@ -1,0 +1,23 @@
+{% if show %}
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Administration</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Tools for organisation admins</p>
+                <div class="btn-group" role="group" aria-label="Administration tools">
+                    <a href="{% url 'audit:event_list' %}" class="btn btn-outline-dark">
+                        <i class="bi bi-journal-text me-1"></i> Audit log
+                    </a>
+                    <a href="{% url 'accounts:org_export' %}" class="btn btn-outline-dark">
+                        <i class="bi bi-box-arrow-down me-1"></i> Export data
+                    </a>
+                    {# Later features add their admin buttons here, one <a> per tool. #}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

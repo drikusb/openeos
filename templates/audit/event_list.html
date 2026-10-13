@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Audit log — EOS App{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h1 class="h3 mb-0"><i class="bi bi-journal-text me-2"></i>Audit log</h1>
+        <p class="text-muted mt-1 mb-0">What has happened in {{ org.name }}</p>
+    </div>
+    <div class="col-auto">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="audit-action" class="form-label mb-0 text-muted small">Action</label>
+            <select id="audit-action" name="action" class="form-select form-select-sm"
+                    onchange="this.form.submit()">
+                <option value="">All actions</option>
+                {% for action in actions %}
+                <option value="{{ action }}"
+                        {% if action == selected_action %}selected{% endif %}>
+                    {{ action }}
+                </option>
+                {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-sm btn-dark">Filter</button></noscript>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        {% if events %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>When</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                        <th>Details</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td class="text-nowrap">
+                            <span title="{{ event.created_at|date:'c' }}">
+                                {{ event.created_at|date:"j M Y H:i" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if event.actor_label %}
+                            <span class="fw-semibold">{{ event.actor_label }}</span>
+                            {% if not event.actor %}
+                            <span class="text-muted small">(deleted)</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ event.action }}</code></td>
+                        <td>
+                            {% if event.target_label or event.target_type %}
+                            {{ event.target_label }}
+                            <span class="text-muted small d-block">
+                                {{ event.target_type }}
+                                {% if event.target_id %}#{{ event.target_id }}{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for key, value in event.details.items %}
+                            <span class="badge bg-light text-dark border me-1">
+                                {{ key }}: {{ value }}
+                            </span>
+                            {% empty %}
+                            <span class="text-muted">—</span>
+                            {% endfor %}
+                        </td>
+                        <td class="text-muted text-nowrap">{{ event.ip_address|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="bi bi-journal-text display-3 d-block mb-3"></i>
+            {% if selected_action %}
+            <h5>No events for this action</h5>
+            <a href="{% url 'audit:event_list' %}" class="btn btn-outline-secondary mt-2">
+                Show all actions
+            </a>
+            {% else %}
+            <h5>Nothing recorded yet</h5>
+            <p class="mb-0">Logins, logouts and administrative actions will appear here.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3" aria-label="Audit log pages">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ page_suffix }}">
+                Previous
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ page_suffix }}">
+                Next
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
