@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('apps.accounts.urls', namespace='accounts')),
+    path('', include('apps.audit.urls')),
     path('rocks/', include('apps.rocks.urls', namespace='rocks')),
     path('issues/', include('apps.issues.urls', namespace='issues')),
     path('todos/', include('apps.todos.urls', namespace='todos')),

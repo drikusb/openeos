@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views_export import OrganizationExportView
 
 app_name = 'accounts'
 
@@ -7,6 +8,7 @@ urlpatterns = [
     path('org/setup/', views.OrgSetupView.as_view(), name='org_setup'),
     path('org/', views.OrgDetailView.as_view(), name='org_detail'),
     path('org/<int:pk>/switch/', views.OrgSwitchView.as_view(), name='org_switch'),
+    path('org/export/', OrganizationExportView.as_view(), name='org_export'),
     path('teams/', views.TeamListView.as_view(), name='team_list'),
     path('teams/new/', views.TeamCreateView.as_view(), name='team_create'),
     path('teams/<int:pk>/', views.TeamDetailView.as_view(), name='team_detail'),

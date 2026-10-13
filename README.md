@@ -16,6 +16,8 @@ Built with Django, Bootstrap 5, PostgreSQL, and Docker. No JavaScript frameworks
 | **Scorecards** | Weekly measurables with above/below/equal goal directions and colour-coded status cells |
 | **Issues** | IDS® (Identify, Discuss, Solve) list with short-term / long-term types, cross-team delegation, and activity history |
 | **To-Dos** | Weekly action items with escalation levels, due dates, and Rock/Issue linking |
+| **Audit log** | Logins, logouts, failed logins and administrative actions recorded per organisation; admins see their organisation's log, superusers see everything in the Django admin |
+| **Data export** | Organisation admins can download everything that belongs to their organisation as one archive (JSON for importing, CSV for spreadsheets, logo and avatars); operators can export one or every organisation from the command line. Every export is written to the audit log |
 | **Level 10 Meeting®** | Guided 90-minute meeting runner with timed segments, segue entries, headlines, IDS® integration, ratings, and cascading messages |
 
 ---
