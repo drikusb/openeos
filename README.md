@@ -23,6 +23,7 @@ Built with Django, Bootstrap 5, PostgreSQL, and Docker. No JavaScript frameworks
 | **Issues** | IDS® (Identify, Discuss, Solve) list with short-term / long-term types, cross-team delegation, and activity history |
 | **To-Dos** | Weekly action items with escalation levels, due dates, and Rock/Issue linking |
 | **Audit log** | Logins, logouts, failed logins and administrative actions recorded per organisation; admins see their organisation's log, superusers see everything in the Django admin |
+| **Data export** | Organisation admins can download everything that belongs to their organisation as one archive (JSON for importing, CSV for spreadsheets, logo and avatars); operators can export one or every organisation from the command line. Every export is written to the audit log; an archive can be loaded into another instance with `import_organization` |
 | **Level 10 Meeting®** | Guided 90-minute meeting runner with timed segments, segue entries, headlines, IDS® integration, ratings, and cascading messages |
 | **Two-factor authentication** | Optional per user: an authenticator app (TOTP) plus ten single-use backup codes, set up from **My Profile**. Set `OTP_TOTP_ISSUER` to change the name shown in authenticator apps; a later change lets an organisation require it for its members |
 

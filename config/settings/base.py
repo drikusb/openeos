@@ -120,6 +120,10 @@ MEDIA_ROOT = BASE_DIR / 'mediafiles'
 # Nginx sits in front, let it send the bytes via X-Accel-Redirect instead of Django.
 MEDIA_ACCEL_REDIRECT = config('MEDIA_ACCEL_REDIRECT', default=False, cast=bool)
 
+# Largest organisation archive the browser export will build. Bigger ones are
+# exported on the server with manage.py export_organization, which has no limit.
+EXPORT_MAX_BYTES = config('EXPORT_MAX_BYTES', default=500 * 1024 * 1024, cast=int)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/accounts/login/'
