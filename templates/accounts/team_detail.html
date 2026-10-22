@@ -71,41 +71,9 @@
         </div>
     </div>
 
-    <!-- Future: Rocks, Meetings, Scorecard links -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0"><i class="bi bi-grid me-2"></i>Team modules</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded text-muted text-center small">
-                            <i class="bi bi-gem d-block fs-4 mb-1"></i>
-                            Rocks <span class="badge bg-secondary ms-1">Phase 3</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded text-muted text-center small">
-                            <i class="bi bi-calendar3 d-block fs-4 mb-1"></i>
-                            Meetings <span class="badge bg-secondary ms-1">Phase 9</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded text-muted text-center small">
-                            <i class="bi bi-bar-chart d-block fs-4 mb-1"></i>
-                            Scorecard <span class="badge bg-secondary ms-1">Phase 6</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded text-muted text-center small">
-                            <i class="bi bi-exclamation-triangle d-block fs-4 mb-1"></i>
-                            Issues <span class="badge bg-secondary ms-1">Phase 4</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% load team_modules %}
+        {% team_modules team %}
     </div>
 </div>
 {% endblock %}

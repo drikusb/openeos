@@ -1,0 +1,35 @@
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="mb-0"><i class="bi bi-grid me-2"></i>Team modules</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for tile in tiles %}
+            <div class="col-sm-6">
+                {% if is_member %}
+                <form method="post" action="{% url 'accounts:team_switch' team.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ tile.url }}">
+                    <button type="submit" class="btn w-100 p-3 border rounded bg-white text-center small team-module-tile">
+                        <i class="bi {{ tile.icon }} d-block fs-4 mb-1"></i>
+                        <span class="fw-semibold">{{ tile.label }}</span>
+                        <span class="badge bg-dark ms-1">{{ tile.count }}</span>
+                        <span class="d-block text-muted">{{ tile.caption }}</span>
+                    </button>
+                </form>
+                {% else %}
+                <div class="p-3 border rounded text-center small text-muted">
+                    <i class="bi {{ tile.icon }} d-block fs-4 mb-1"></i>
+                    <span class="fw-semibold">{{ tile.label }}</span>
+                    <span class="badge bg-secondary ms-1">{{ tile.count }}</span>
+                    <span class="d-block">{{ tile.caption }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% if not is_member %}
+        <p class="small text-muted mb-0 mt-3">Join this team to open its modules from here.</p>
+        {% endif %}
+    </div>
+</div>
