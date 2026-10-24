@@ -8,16 +8,24 @@ from django.views.generic import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
+from django.utils.http import urlencode
 from django.contrib import messages
+from django.db.models import Count
 from django.http import HttpResponseForbidden, HttpResponse
 
 from .models import Rock, RockCheckin, RockDependency, RockMilestone
 from .forms import RockForm, RockStatusForm, RockDependencyForm
 from apps.accounts.scoping import (
-    OrgScopedMixin, get_active_team, get_org_object_or_404, is_org_admin,
+    OrgScopedMixin, get_active_org, get_active_team, get_assignable_teams,
+    get_org_object_or_404, is_org_admin,
 )
 from apps.accounts.terminology import get_terms
 from apps.issues.models import Issue, IssueActivity
+
+SCOPE_SESSION_KEY = 'rocks_scope'
+SCOPE_TEAM = 'team'
+SCOPE_ALL = 'all'
+SCOPES = (SCOPE_TEAM, SCOPE_ALL)
 
 
 def get_quarter_year_from_request(request):
@@ -47,6 +55,43 @@ def quarter_options(selected_q, selected_y):
     return options
 
 
+def get_rocks_scope(request):
+    """Return the list scope: ``'team'`` (the navbar's active team) or ``'all'``.
+
+    ``?scope=`` switches it and the choice is kept in the session, so the
+    quarter and status links, which carry no scope, keep showing the same
+    teams. Anything else in ``?scope=`` is ignored in favour of the session.
+    """
+    scope = request.GET.get('scope')
+    if scope in SCOPES:
+        request.session[SCOPE_SESSION_KEY] = scope
+        return scope
+    scope = request.session.get(SCOPE_SESSION_KEY)
+    return scope if scope in SCOPES else SCOPE_TEAM
+
+
+def get_visible_teams(request):
+    """Teams whose Rocks the user may list: their own, or every team for an org admin."""
+    return get_assignable_teams(request.user, get_active_org(request))
+
+
+def scoped_rocks(request, quarter, year):
+    """Rocks for the quarter in the teams the current scope covers, ordered for grouping."""
+    if get_rocks_scope(request) == SCOPE_ALL:
+        team_filter = {'team__in': get_visible_teams(request)}
+    else:
+        team = get_active_team(request)
+        if team is None:
+            return Rock.objects.none()
+        team_filter = {'team': team}
+    return (
+        Rock.objects
+        .filter(quarter=quarter, year=year, **team_filter)
+        .select_related('owner', 'owner__profile', 'team')
+        .order_by('team__name', 'owner__first_name', 'owner__username', 'title')
+    )
+
+
 def _can_edit(user, rock):
     """Only the owner or an organisation admin may change a Rock's status or check in."""
     return user == rock.owner or is_org_admin(user, rock.team.organization)
@@ -61,25 +106,51 @@ class RockListView(LoginRequiredMixin, ListView):
     template_name = 'rocks/rock_list.html'
     context_object_name = 'rocks'
 
-    def get_queryset(self):
-        team = get_active_team(self.request)
-        if not team:
-            return Rock.objects.none()
-        quarter, year = get_quarter_year_from_request(self.request)
-        qs = (
-            Rock.objects
-            .filter(team=team, quarter=quarter, year=year)
-            .select_related('owner', 'owner__profile', 'team')
-            .order_by('owner__first_name', 'owner__username', 'title')
-        )
+    def _status_filter(self):
         status = self.request.GET.get('status')
-        if status in dict(Rock.STATUS_CHOICES):
+        return status if status in dict(Rock.STATUS_CHOICES) else None
+
+    def get_queryset(self):
+        quarter, year = get_quarter_year_from_request(self.request)
+        qs = scoped_rocks(self.request, quarter, year)
+        status = self._status_filter()
+        if status:
             qs = qs.filter(status=status)
         return qs
+
+    def _other_team_counts(self, team, visible_teams, quarter, year):
+        """How many matching Rocks the user's other visible teams have this quarter."""
+        others = (
+            Rock.objects
+            .filter(quarter=quarter, year=year, team__in=visible_teams)
+            .exclude(team=team)
+        )
+        status = self._status_filter()
+        if status:
+            others = others.filter(status=status)
+        counts = dict(others.values('team').annotate(n=Count('id')).values_list('team', 'n'))
+        return [(t, counts[t.pk]) for t in visible_teams if t.pk in counts]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         quarter, year = get_quarter_year_from_request(self.request)
+        scope = get_rocks_scope(self.request)
+        status = self._status_filter()
+        # Quarter and status, for links that switch scope without losing the filters.
+        filter_query = urlencode(
+            {'quarter': quarter, 'year': year, **({'status': status} if status else {})}
+        )
+        active_team = get_active_team(self.request)
+        visible_teams = list(get_visible_teams(self.request))
+        other_team_counts = []
+        if scope == SCOPE_ALL:
+            scoped_teams = visible_teams
+        else:
+            scoped_teams = [active_team] if active_team else []
+            if active_team:
+                other_team_counts = self._other_team_counts(
+                    active_team, visible_teams, quarter, year
+                )
         ctx.update({
             'quarter': quarter,
             'year': year,
@@ -89,36 +160,43 @@ class RockListView(LoginRequiredMixin, ListView):
             'next_q': Rock.next_quarter(quarter, year),
             'status_filter': self.request.GET.get('status', ''),
             'status_choices': Rock.STATUS_CHOICES,
+            'scope': scope,
+            'filter_query': filter_query,
+            'active_team': active_team,
+            'visible_teams': visible_teams,
+            'scoped_teams': scoped_teams,
+            'other_team_counts': other_team_counts,
+            'other_rocks_total': sum(n for _, n in other_team_counts),
+            'other_teams_summary': ', '.join(f'{t.name}: {n}' for t, n in other_team_counts),
         })
         rocks = list(ctx['rocks'])
-        ctx['teams_rocks'] = [(get_active_team(self.request), rocks)] if rocks else []
+        ctx['teams_rocks'] = [
+            (team, list(team_rocks))
+            for team, team_rocks in groupby(rocks, key=lambda r: r.team)
+        ]
         ctx['my_rocks'] = [r for r in rocks if r.owner == self.request.user]
         return ctx
 
 
 class RockCsvExportView(LoginRequiredMixin, View):
-    """GET-only: export the active team's rocks for the requested quarter as CSV."""
+    """GET-only: export the rocks in the current scope for the requested quarter as CSV.
+
+    The scope is the same one the list uses (see ``get_rocks_scope``): the
+    active team by default, or every team the user may see.
+    """
 
     def get(self, request):
-        team = get_active_team(request)
         quarter, year = get_quarter_year_from_request(request)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="rocks_q{quarter}_{year}.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Title', 'Owner', 'Status', 'Quarter', 'Year', 'Due Date'])
-        if team:
-            rocks = (
-                Rock.objects
-                .filter(team=team, quarter=quarter, year=year)
-                .select_related('owner')
-                .order_by('owner__first_name', 'owner__username', 'title')
-            )
-            for rock in rocks:
-                owner_name = rock.owner.get_full_name() or rock.owner.username
-                writer.writerow([
-                    rock.title, owner_name, rock.get_status_display(),
-                    rock.quarter, rock.year, rock.due_date.isoformat(),
-                ])
+        writer.writerow(['Title', 'Team', 'Owner', 'Status', 'Quarter', 'Year', 'Due Date'])
+        for rock in scoped_rocks(request, quarter, year):
+            owner_name = rock.owner.get_full_name() or rock.owner.username
+            writer.writerow([
+                rock.title, rock.team.name, owner_name, rock.get_status_display(),
+                rock.quarter, rock.year, rock.due_date.isoformat(),
+            ])
         return response
 
 

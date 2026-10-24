@@ -8,7 +8,7 @@ that organisation and ignores the session choice.
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-from .models import Membership, Organization
+from .models import Membership, Organization, Team
 
 SESSION_ORG_KEY = 'active_org_id'
 SESSION_TEAM_KEY = 'active_team_id'
@@ -107,3 +107,17 @@ class OrgScopedMixin:
         if org is None:
             return queryset.none()
         return queryset.filter(**{self.org_lookup: org})
+
+
+def get_assignable_teams(user, org):
+    """Teams ``user`` may file a Rock, To-Do or Issue under within ``org``.
+
+    Members choose from the teams they belong to; organisation admins may
+    choose any team in the organisation.
+    """
+    if user is None or org is None:
+        return Team.objects.none()
+    teams = Team.objects.filter(organization=org)
+    if not is_org_admin(user, org):
+        teams = teams.filter(members__user=user)
+    return teams.order_by('name')

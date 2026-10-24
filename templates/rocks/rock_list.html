@@ -21,6 +21,22 @@
     </div>
 </div>
 
+{# ── Scope hint: which teams this list covers ── #}
+{% if scope == 'all' %}
+<p class="text-muted small mb-3">
+    Showing all your teams ({{ scoped_teams|length }})
+    {% if active_team %}
+    · <a href="?{{ filter_query }}&amp;scope=team">Back to {{ active_team.name }}</a>
+    {% endif %}
+</p>
+{% elif other_rocks_total %}
+<p class="text-muted small mb-3">
+    Showing {{ active_team.name }}
+    · <a href="?{{ filter_query }}&amp;scope=all" title="{{ other_teams_summary }}">
+        {{ other_rocks_total }} more on other teams</a>
+</p>
+{% endif %}
+
 {# ── Quarter nav ── #}
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="?quarter={{ prev_q.0 }}&year={{ prev_q.1 }}" class="btn btn-sm btn-outline-secondary">
@@ -51,6 +67,22 @@
         {{ label }}
     </a>
     {% endfor %}
+
+    {# ── Scope toggle: the active team, or every team the user may see ── #}
+    {% if visible_teams|length > 1 %}
+    <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Which teams to show">
+        <a href="?{{ filter_query }}&amp;scope=team"
+           class="btn {% if scope == 'team' %}btn-dark{% else %}btn-outline-secondary{% endif %}"
+           {% if scope == 'team' %}aria-current="true"{% endif %}>
+            This team
+        </a>
+        <a href="?{{ filter_query }}&amp;scope=all"
+           class="btn {% if scope == 'all' %}btn-dark{% else %}btn-outline-secondary{% endif %}"
+           {% if scope == 'all' %}aria-current="true"{% endif %}>
+            All teams
+        </a>
+    </div>
+    {% endif %}
 
     {% if teams %}
     <div class="ms-auto">
@@ -198,6 +230,14 @@
     </div>
     {% endfor %}
 
+{% elif scope == 'all' %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-gem display-3 d-block mb-3 text-success opacity-25"></i>
+    <h4>No Rocks for {{ quarter_label }} on any of your teams.</h4>
+    <a href="{% url 'rocks:create' %}" class="btn btn-dark">
+        <i class="bi bi-plus-lg me-1"></i>Create first Rock
+    </a>
+</div>
 {% else %}
 <div class="text-center py-5 text-muted">
     <i class="bi bi-gem display-3 d-block mb-3 text-success opacity-25"></i>
